@@ -6049,11 +6049,11 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                     triggered_spell_id = 34299;
                     if (triggeredByAura->GetCasterGUID() != GetGUID())
                         break;
-                    int32 basepoints1 = triggerAmount * 2;
+                    int32 basepoints1 = CalculatePct(GetMaxPower(Powers(POWER_MANA)), triggerAmount * 2);
                     // Improved Leader of the Pack
                     // Check cooldown of heal spell cooldown
                     if (GetTypeId() == TYPEID_PLAYER && !ToPlayer()->HasSpellCooldown(34299))
-                        CastCustomSpell(this, 60889, &basepoints1, 0, 0, true, 0, triggeredByAura);
+                        CastCustomSpell(this, 68285, &basepoints1, 0, 0, true, 0, triggeredByAura);
                     break;
                 }
                 // Healing Touch (Dreamwalker Raiment set)
@@ -17761,7 +17761,7 @@ void Unit::BuildCooldownPacket(WorldPacket& data, uint8 flags, PacketCooldowns c
     }
 }
 
-int32 Unit::GetHighestExclusiveSameEffectSpellGroupValue(AuraEffect const* aurEff, AuraType auraType, bool sameMiscValue /*= false*/) const
+int32 Unit::GetHighestExclusiveSameEffectSpellGroupValue(AuraEffect const* aurEff, AuraType auraType, bool checkMiscValue /*= false*/, int32 miscValue /*= 0*/) const
 {
     int32 val = 0;
     SpellSpellGroupMapBounds spellGroup = sSpellMgr->GetSpellSpellGroupMapBounds(aurEff->GetSpellInfo()->GetFirstRankSpell()->Id);
@@ -17772,7 +17772,7 @@ int32 Unit::GetHighestExclusiveSameEffectSpellGroupValue(AuraEffect const* aurEf
             AuraEffectList const& auraEffList = GetAuraEffectsByType(auraType);
             for (AuraEffectList::const_iterator auraItr = auraEffList.begin(); auraItr != auraEffList.end(); ++auraItr)
             {
-                if (aurEff != (*auraItr) && (!sameMiscValue || aurEff->GetMiscValue() == (*auraItr)->GetMiscValue()) &&
+                if (aurEff != (*auraItr) && (!checkMiscValue || (*auraItr)->GetMiscValue() == miscValue) &&
                     sSpellMgr->IsSpellMemberOfSpellGroup((*auraItr)->GetSpellInfo()->Id, itr->second))
                 {
                     // absolute value only
