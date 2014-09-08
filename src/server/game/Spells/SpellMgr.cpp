@@ -85,6 +85,9 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellInfo const* spellproto,
             // Black Plague
             else if (spellproto->Id == 64155)
                 return DIMINISHING_NONE;
+            // Screams of the Dead (King Ymiron)
+            else if (spellproto->Id == 51750)
+                return DIMINISHING_NONE;
             break;
         }
         // Event spells
@@ -2382,7 +2385,7 @@ void SpellMgr::LoadPetLevelupSpellMap()
                 if (skillLine->skillId != creatureFamily->skillLine[j])
                     continue;
 
-                if (skillLine->learnOnGetSkill != ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL)
+                if (skillLine->AutolearnType != SKILL_LINE_ABILITY_LEARNED_ON_SKILL_LEARN)
                     continue;
 
                 SpellInfo const* spell = GetSpellInfo(skillLine->spellId);
@@ -3309,6 +3312,12 @@ void SpellMgr::LoadSpellInfoCorrections()
                 /// @todo: remove this when basepoints of all Ride Vehicle auras are calculated correctly
                 spellInfo->Effects[EFFECT_0].BasePoints = 1;
                 break;
+            case 59630: // Black Magic
+                spellInfo->Attributes |= SPELL_ATTR0_PASSIVE;
+                break;
+            case 17364: // Stormstrike
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
             // ULDUAR SPELLS
             //
             case 62374: // Pursued (Flame Leviathan)
@@ -3346,6 +3355,16 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // may be db data bug, or blizz may keep reapplying area auras every update with checking immunity
                 // that will be clear if we get more spells with problem like this
                 spellInfo->AttributesEx |= SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY;
+                break;
+            case 63414: // Spinning Up (Mimiron)
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->ChannelInterruptFlags = 0;
+                break;
+            case 63036: // Rocket Strike (Mimiron)
+                spellInfo->Speed = 0;
+                break;
+            case 64668: // Magnetic Field (Mimiron)
+                spellInfo->Mechanic = MECHANIC_NONE;
                 break;
             case 64468: // Empowering Shadows (Yogg-Saron)
             case 64486: // Empowering Shadows (Yogg-Saron)

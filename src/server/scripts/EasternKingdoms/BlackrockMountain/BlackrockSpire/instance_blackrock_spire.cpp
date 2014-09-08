@@ -15,15 +15,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ObjectMgr.h"
-#include "ScriptMgr.h"
-#include "ObjectDefines.h"
 #include "Cell.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "InstanceScript.h"
+#include "Player.h"
 #include "ScriptedCreature.h"
+#include "ScriptMgr.h"
 #include "blackrock_spire.h"
 
 //uint32 const DragonspireRunes[7] = { GO_HALL_RUNE_1, GO_HALL_RUNE_2, GO_HALL_RUNE_3, GO_HALL_RUNE_4, GO_HALL_RUNE_5, GO_HALL_RUNE_6, GO_HALL_RUNE_7 };
@@ -51,6 +50,7 @@ public:
     {
         instance_blackrock_spireMapScript(InstanceMap* map) : InstanceScript(map)
         {
+            SetHeaders(DataHeader);
             SetBossNumber(EncounterCount);
             HighlordOmokk             = 0;
             ShadowHunterVoshgajin     = 0;
@@ -410,24 +410,24 @@ public:
 
         void Dragonspireroomstore()
         {
-            uint8 creaturecount;
+            uint8 creatureCount;
 
             for (uint8 i = 0; i < 7; ++i)
             {
-                creaturecount = 0;
+                creatureCount = 0;
 
                 if (GameObject* rune = instance->GetGameObject(go_roomrunes[i]))
                 {
-                    for (uint8 ii = 0; ii < 3; ++ii)
+                    for (uint8 j = 0; j < 3; ++j)
                     {
                         std::list<Creature*> creatureList;
-                        GetCreatureListWithEntryInGrid(creatureList, rune, DragonspireMobs[ii], 15.0f);
+                        GetCreatureListWithEntryInGrid(creatureList, rune, DragonspireMobs[j], 15.0f);
                         for (std::list<Creature*>::iterator itr = creatureList.begin(); itr != creatureList.end(); ++itr)
                         {
-                            if (Creature* creatureList = *itr)
+                            if (Creature* creature = *itr)
                             {
-                                runecreaturelist[i] [creaturecount] = creatureList->GetGUID();
-                                ++creaturecount;
+                                runecreaturelist[i][creatureCount] = creature->GetGUID();
+                                ++creatureCount;
                             }
                         }
                     }
@@ -500,50 +500,6 @@ public:
                 if (GameObject* door2 = instance->GetGameObject(go_doors))
                     HandleGameObject(0, true, door2);
             }
-        }
-
-        std::string GetSaveData() override
-        {
-            OUT_SAVE_INST_DATA;
-
-            std::ostringstream saveStream;
-            saveStream << "B S " << GetBossSaveData();
-
-            OUT_SAVE_INST_DATA_COMPLETE;
-            return saveStream.str();
-        }
-
-        void Load(const char* strIn) override
-        {
-            if (!strIn)
-            {
-                OUT_LOAD_INST_DATA_FAIL;
-                return;
-            }
-
-            OUT_LOAD_INST_DATA(strIn);
-
-            char dataHead1, dataHead2;
-
-            std::istringstream loadStream(strIn);
-            loadStream >> dataHead1 >> dataHead2;
-
-            if (dataHead1 == 'B' && dataHead2 == 'S')
-            {
-                for (uint8 i = 0; i < EncounterCount; ++i)
-                {
-                    uint32 tmpState;
-                    loadStream >> tmpState;
-                    if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                        tmpState = NOT_STARTED;
-
-                    SetBossState(i, EncounterState(tmpState));
-                }
-            }
-            else
-                OUT_LOAD_INST_DATA_FAIL;
-
-            OUT_LOAD_INST_DATA_COMPLETE;
         }
 
         protected:

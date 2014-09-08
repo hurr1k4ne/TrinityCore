@@ -114,7 +114,21 @@ public:
 
     struct boss_lieutenant_drakeAI : public ScriptedAI
     {
-        boss_lieutenant_drakeAI(Creature* creature) : ScriptedAI(creature) { }
+        boss_lieutenant_drakeAI(Creature* creature) : ScriptedAI(creature)
+        {
+            Initialize();
+        }
+
+        void Initialize()
+        {
+            CanPatrol = true;
+            wpId = 0;
+
+            Whirlwind_Timer = 20000;
+            Fear_Timer = 30000;
+            MortalStrike_Timer = 45000;
+            ExplodingShout_Timer = 25000;
+        }
 
         bool CanPatrol;
         uint32 wpId;
@@ -126,13 +140,7 @@ public:
 
         void Reset() override
         {
-            CanPatrol = true;
-            wpId = 0;
-
-            Whirlwind_Timer = 20000;
-            Fear_Timer = 30000;
-            MortalStrike_Timer = 45000;
-            ExplodingShout_Timer = 25000;
+            Initialize();
         }
 
         void EnterCombat(Unit* /*who*/) override
@@ -167,7 +175,7 @@ public:
             if (Whirlwind_Timer <= diff)
             {
                 DoCastVictim(SPELL_WHIRLWIND);
-                Whirlwind_Timer = 20000+rand()%5000;
+                Whirlwind_Timer = 20000 + rand32() % 5000;
             } else Whirlwind_Timer -= diff;
 
             //Fear
@@ -175,7 +183,7 @@ public:
             {
                 Talk(SAY_SHOUT);
                 DoCastVictim(SPELL_FRIGHTENING_SHOUT);
-                Fear_Timer = 25000+rand()%10000;
+                Fear_Timer = 25000 + rand32() % 10000;
             } else Fear_Timer -= diff;
 
             //Mortal Strike
@@ -183,7 +191,7 @@ public:
             {
                 Talk(SAY_MORTAL);
                 DoCastVictim(SPELL_MORTAL_STRIKE);
-                MortalStrike_Timer = 20000+rand()%10000;
+                MortalStrike_Timer = 20000 + rand32() % 10000;
             } else MortalStrike_Timer -= diff;
 
             DoMeleeAttackIfReady();

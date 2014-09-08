@@ -37,7 +37,7 @@ enum Misc
     RIFT_BOSS                         = 1
 };
 
-inline uint32 RandRiftBoss() { return ((rand()%2) ? NPC_RIFT_KEEPER : NPC_RIFT_LORD); }
+inline uint32 RandRiftBoss() { return ((rand32() % 2) ? NPC_RIFT_KEEPER : NPC_RIFT_LORD); }
 
 float PortalLocation[4][4]=
 {
@@ -94,6 +94,7 @@ public:
 
         void Initialize() override
         {
+            SetHeaders(DataHeader);
             _medivhGUID         = 0;
             Clear();
         }

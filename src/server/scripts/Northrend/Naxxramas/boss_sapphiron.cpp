@@ -140,7 +140,7 @@ class boss_sapphiron : public CreatureScript
                     IceBlockMap::iterator itr = _iceblocks.find(target->GetGUID());
                     if (itr != _iceblocks.end() && !itr->second)
                     {
-                        if (GameObject* iceblock = me->SummonGameObject(GO_ICEBLOCK, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), 0, 0, 0, 0, 0, 25000))
+                        if (GameObject* iceblock = me->SummonGameObject(GO_ICEBLOCK, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), 0, 0, 0, 0, 0, 25))
                             itr->second = iceblock->GetGUID();
                     }
                 }
@@ -312,7 +312,7 @@ class boss_sapphiron : public CreatureScript
                                 else
                                 {
                                     std::vector<Unit*>::const_iterator itr = targets.begin();
-                                    advance(itr, rand()%targets.size());
+                                    advance(itr, rand32() % targets.size());
                                     _iceblocks.insert(std::make_pair((*itr)->GetGUID(), 0));
                                     DoCast(*itr, SPELL_ICEBOLT);
                                     --_iceboltCount;
@@ -375,7 +375,7 @@ class boss_sapphiron : public CreatureScript
 
                     for (IceBlockMap::const_iterator itr = _iceblocks.begin(); itr != _iceblocks.end(); ++itr)
                     {
-                        if (GameObject* go = GameObject::GetGameObject(*me, itr->second))
+                        if (GameObject* go = ObjectAccessor::GetGameObject(*me, itr->second))
                         {
                             if (go->IsInBetween(me, target, 2.0f)
                                 && me->GetExactDist2d(target->GetPositionX(), target->GetPositionY()) - me->GetExactDist2d(go->GetPositionX(), go->GetPositionY()) < 5.0f)

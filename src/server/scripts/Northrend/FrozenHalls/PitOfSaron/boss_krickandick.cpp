@@ -140,6 +140,7 @@ class boss_ick : public CreatureScript
             boss_ickAI(Creature* creature) : BossAI(creature, DATA_ICK), _vehicle(creature->GetVehicleKit())
             {
                 ASSERT(_vehicle);
+                _tempThreat = 0;
             }
 
             void Reset() override
@@ -286,14 +287,20 @@ class boss_krick : public CreatureScript
         {
             boss_krickAI(Creature* creature) : ScriptedAI(creature), _instanceScript(creature->GetInstanceScript()), _summons(creature)
             {
+                Initialize();
+            }
+
+            void Initialize()
+            {
+                _phase = PHASE_COMBAT;
+                _outroNpcGUID = 0;
+                _tyrannusGUID = 0;
             }
 
             void Reset() override
             {
                 _events.Reset();
-                _phase = PHASE_COMBAT;
-                _outroNpcGUID = 0;
-                _tyrannusGUID = 0;
+                Initialize();
 
                 me->SetReactState(REACT_PASSIVE);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
@@ -624,7 +631,7 @@ class spell_krick_pursuit : public SpellScriptLoader
                         {
                             ick->AI()->Talk(SAY_ICK_CHASE_1, target);
                             ick->AddAura(GetSpellInfo()->Id, target);
-                            CAST_AI(boss_ick::boss_ickAI, ick->AI())->SetTempThreat(ick->getThreatManager().getThreat(target));
+                            ENSURE_AI(boss_ick::boss_ickAI, ick->AI())->SetTempThreat(ick->getThreatManager().getThreat(target));
                             ick->AddThreat(target, float(GetEffectValue()));
                             target->AddThreat(ick, float(GetEffectValue()));
                         }
@@ -645,7 +652,7 @@ class spell_krick_pursuit : public SpellScriptLoader
             {
                 if (Unit* caster = GetCaster())
                     if (Creature* creCaster = caster->ToCreature())
-                        CAST_AI(boss_ick::boss_ickAI, creCaster->AI())->_ResetThreat(GetTarget());
+                        ENSURE_AI(boss_ick::boss_ickAI, creCaster->AI())->_ResetThreat(GetTarget());
             }
 
             void Register() override

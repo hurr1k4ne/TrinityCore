@@ -103,7 +103,27 @@ public:
     {
         boss_felblood_kaelthasAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
             instance = creature->GetInstanceScript();
+        }
+
+        void Initialize()
+        {
+            /// @todo Timers
+            FireballTimer = 0;
+            PhoenixTimer = 10000;
+            FlameStrikeTimer = 25000;
+            CombatPulseTimer = 0;
+
+            PyroblastTimer = 60000;
+
+            GravityLapseTimer = 0;
+            GravityLapsePhase = 0;
+
+            FirstGravityLapse = true;
+            HasTaunted = false;
+
+            Phase = 0;
         }
 
         InstanceScript* instance;
@@ -134,30 +154,16 @@ public:
 
         void Reset() override
         {
-            /// @todo Timers
-            FireballTimer = 0;
-            PhoenixTimer = 10000;
-            FlameStrikeTimer = 25000;
-            CombatPulseTimer = 0;
+            Initialize();
 
-            PyroblastTimer = 60000;
-
-            GravityLapseTimer = 0;
-            GravityLapsePhase = 0;
-
-            FirstGravityLapse = true;
-            HasTaunted = false;
-
-            Phase = 0;
-
-            instance->SetData(DATA_KAELTHAS_EVENT, NOT_STARTED);
+            instance->SetBossState(DATA_KAELTHAS, NOT_STARTED);
         }
 
         void JustDied(Unit* /*killer*/) override
         {
             Talk(SAY_DEATH);
 
-            instance->SetData(DATA_KAELTHAS_EVENT, DONE);
+            instance->SetBossState(DATA_KAELTHAS, DONE);
 
             // Enable the Translocation Orb Exit
             if (GameObject* escapeOrb = ObjectAccessor::GetGameObject(*me, instance->GetData64(DATA_ESCAPE_ORB)))
@@ -172,7 +178,7 @@ public:
 
         void EnterCombat(Unit* /*who*/) override
         {
-            instance->SetData(DATA_KAELTHAS_EVENT, IN_PROGRESS);
+            instance->SetBossState(DATA_KAELTHAS, IN_PROGRESS);
         }
 
         void MoveInLineOfSight(Unit* who) override
@@ -439,13 +445,19 @@ public:
     {
         npc_felkael_flamestrikeAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
+        }
+
+        void Initialize()
+        {
+            FlameStrikeTimer = 5000;
         }
 
         uint32 FlameStrikeTimer;
 
         void Reset() override
         {
-            FlameStrikeTimer = 5000;
+            Initialize();
 
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
             me->setFaction(14);
@@ -481,7 +493,16 @@ public:
     {
         npc_felkael_phoenixAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
             instance = creature->GetInstanceScript();
+        }
+
+        void Initialize()
+        {
+            BurnTimer = 2000;
+            Death_Timer = 3000;
+            Rebirth = false;
+            FakeDeath = false;
         }
 
         InstanceScript* instance;
@@ -495,10 +516,7 @@ public:
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE + UNIT_FLAG_NON_ATTACKABLE);
             me->SetDisableGravity(true);
             DoCast(me, SPELL_PHOENIX_BURN, true);
-            BurnTimer = 2000;
-            Death_Timer = 3000;
-            Rebirth = false;
-            FakeDeath = false;
+            Initialize();
         }
 
         void EnterCombat(Unit* /*who*/) override { }
@@ -515,7 +533,7 @@ public:
                 return;
             }
             //Don't really die in all phases of Kael'Thas
-            if (instance->GetData(DATA_KAELTHAS_EVENT) == 0)
+            if (instance->GetBossState(DATA_KAELTHAS) == 0)
             {
                 //prevent death
                 damage = 0;
@@ -592,13 +610,21 @@ public:
 
     struct npc_felkael_phoenix_eggAI : public ScriptedAI
     {
-        npc_felkael_phoenix_eggAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_felkael_phoenix_eggAI(Creature* creature) : ScriptedAI(creature)
+        {
+            Initialize();
+        }
+
+        void Initialize()
+        {
+            HatchTimer = 10000;
+        }
 
         uint32 HatchTimer;
 
         void Reset() override
         {
-            HatchTimer = 10000;
+            Initialize();
         }
 
         void EnterCombat(Unit* /*who*/) override { }

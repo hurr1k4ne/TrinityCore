@@ -88,19 +88,24 @@ class boss_akilzon : public CreatureScript
         {
             boss_akilzonAI(Creature* creature) : BossAI(creature, DATA_AKILZONEVENT)
             {
-                memset(BirdGUIDs, 0, sizeof(BirdGUIDs));
+                Initialize();
             }
 
-            void Reset() override
+            void Initialize()
             {
-                _Reset();
-
                 TargetGUID = 0;
                 CloudGUID = 0;
                 CycloneGUID = 0;
                 memset(BirdGUIDs, 0, sizeof(BirdGUIDs));
                 StormCount = 0;
                 isRaining = false;
+            }
+
+            void Reset() override
+            {
+                _Reset();
+
+                Initialize();
 
                 SetWeather(WEATHER_STATE_FINE, 0.0f);
             }
@@ -182,10 +187,11 @@ class boss_akilzon : public CreatureScript
                     // visual
                     float x, y, z;
                     z = me->GetPositionZ();
-                    for (uint8 i = 0; i < 5+rand()%5; ++i)
+                    uint8 maxCount = 5 + rand32() % 5;
+                    for (uint8 i = 0; i < maxCount; ++i)
                     {
-                        x = 343.0f+rand()%60;
-                        y = 1380.0f+rand()%60;
+                        x = 343.0f + rand32() % 60;
+                        y = 1380.0f + rand32() % 60;
                         if (Unit* trigger = me->SummonTrigger(x, y, z, 0, 2000))
                         {
                             trigger->setFaction(35);
@@ -379,7 +385,17 @@ class npc_akilzon_eagle : public CreatureScript
 
         struct npc_akilzon_eagleAI : public ScriptedAI
         {
-            npc_akilzon_eagleAI(Creature* creature) : ScriptedAI(creature) { }
+            npc_akilzon_eagleAI(Creature* creature) : ScriptedAI(creature)
+            {
+                Initialize();
+            }
+
+            void Initialize()
+            {
+                EagleSwoop_Timer = urand(5000, 10000);
+                arrived = true;
+                TargetGUID = 0;
+            }
 
             uint32 EagleSwoop_Timer;
             bool arrived;
@@ -387,9 +403,7 @@ class npc_akilzon_eagle : public CreatureScript
 
             void Reset() override
             {
-                EagleSwoop_Timer = urand(5000, 10000);
-                arrived = true;
-                TargetGUID = 0;
+                Initialize();
                 me->SetDisableGravity(true);
             }
 

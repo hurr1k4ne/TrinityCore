@@ -263,7 +263,18 @@ public:
     {
         boss_kelthuzadAI(Creature* creature) : BossAI(creature, BOSS_KELTHUZAD), spawns(creature)
         {
+            Initialize();
             uiFaction = me->getFaction();
+        }
+
+        void Initialize()
+        {
+            nGuardiansOfIcecrownCount = 0;
+            uiGuardiansOfIcecrownTimer = 5000; // 5 seconds for summoning each Guardian of Icecrown in phase 3
+
+            Phase = 0;
+            nAbomination = 0;
+            nWeaver = 0;
         }
 
         uint32 Phase;
@@ -315,12 +326,7 @@ public:
                         portal->ResetDoorOrButton();
             }
 
-            nGuardiansOfIcecrownCount = 0;
-            uiGuardiansOfIcecrownTimer = 5000; // 5 seconds for summoning each Guardian of Icecrown in phase 3
-
-            Phase = 0;
-            nAbomination = 0;
-            nWeaver = 0;
+            Initialize();
         }
 
         void KilledUnit(Unit* /*victim*/) override
@@ -583,7 +589,7 @@ public:
                             if (!unitList.empty())
                             {
                                 std::vector<Unit*>::const_iterator itr = unitList.begin();
-                                advance(itr, rand()%unitList.size());
+                                advance(itr, rand32() % unitList.size());
                                 DoCast(*itr, SPELL_MANA_DETONATION);
                                 Talk(SAY_SPECIAL);
                             }
@@ -599,7 +605,7 @@ public:
                         case EVENT_BLAST:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, RAID_MODE(1, 0), 0, true))
                                 DoCast(target, SPELL_FROST_BLAST);
-                            if (rand()%2)
+                            if (rand32() % 2)
                                 Talk(SAY_FROST_BLAST);
                             events.Repeat(30000, 90000);
                             break;

@@ -301,7 +301,7 @@ public:
             if (spell->Id == SPELL_T_PHASE_MODULATOR && caster->GetTypeId() == TYPEID_PLAYER)
             {
                 const uint32 entry_list[4] = {ENTRY_PROTO, ENTRY_ADOLE, ENTRY_MATUR, ENTRY_NIHIL};
-                int cid = rand()%(4-1);
+                int cid = rand32() % (4 - 1);
 
                 if (entry_list[cid] == me->GetEntry())
                     ++cid;
@@ -371,7 +371,7 @@ public:
             if (IntangiblePresence_Timer <= diff)
             {
                 DoCastVictim(SPELL_INTANGIBLE_PRESENCE);
-                IntangiblePresence_Timer = 15000+rand()%15000;
+                IntangiblePresence_Timer = 15000 + rand32() % 15000;
             } else IntangiblePresence_Timer -= diff;
 
             if (ManaBurn_Timer <= diff)
@@ -379,13 +379,13 @@ public:
                 Unit* target = me->GetVictim();
                 if (target && target->getPowerType() == POWER_MANA)
                     DoCast(target, SPELL_MANA_BURN);
-                ManaBurn_Timer = 8000+rand()%8000;
+                ManaBurn_Timer = 8000 + rand32() % 8000;
             } else ManaBurn_Timer -= diff;
 
             if (ArcaneBlast_Timer <= diff)
             {
                 DoCastVictim(SPELL_ARCANE_BLAST);
-                ArcaneBlast_Timer = 2500+rand()%5000;
+                ArcaneBlast_Timer = 2500 + rand32() % 5000;
             } else ArcaneBlast_Timer -= diff;
 
             DoMeleeAttackIfReady();
@@ -731,7 +731,7 @@ class npc_simon_bunny : public CreatureScript
             {
                 me->SetCanFly(true);
 
-                large = (bool)id;
+                large = id != 0;
                 playerGUID = guid;
                 StartGame();
             }
@@ -1143,7 +1143,7 @@ public:
             {
                 // Spell 37392 does not exist in dbc, manually spawning
                 me->SummonCreature(NPC_OSCILLATING_FREQUENCY_SCANNER_TOP_BUNNY, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 0.5f, me->GetOrientation(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 50000);
-                me->SummonGameObject(GO_OSCILLATING_FREQUENCY_SCANNER, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), 0, 0, 0, 0, 50000);
+                me->SummonGameObject(GO_OSCILLATING_FREQUENCY_SCANNER, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), 0, 0, 0, 0, 50);
                 me->DespawnOrUnsummon(50000);
             }
 

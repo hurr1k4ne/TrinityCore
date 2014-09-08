@@ -93,7 +93,33 @@ public:
     {
         boss_aranAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
             instance = creature->GetInstanceScript();
+        }
+
+        void Initialize()
+        {
+            SecondarySpellTimer = 5000;
+            NormalCastTimer = 0;
+            SuperCastTimer = 35000;
+            BerserkTimer = 720000;
+            CloseDoorTimer = 15000;
+
+            LastSuperSpell = rand32() % 3;
+
+            FlameWreathTimer = 0;
+            FlameWreathCheckTime = 0;
+
+            CurrentNormalSpell = 0;
+            ArcaneCooldown = 0;
+            FireCooldown = 0;
+            FrostCooldown = 0;
+
+            DrinkInterruptTimer = 10000;
+
+            ElementalsSpawned = false;
+            Drinking = false;
+            DrinkInturrupted = false;
         }
 
         InstanceScript* instance;
@@ -125,27 +151,7 @@ public:
 
         void Reset() override
         {
-            SecondarySpellTimer = 5000;
-            NormalCastTimer = 0;
-            SuperCastTimer = 35000;
-            BerserkTimer = 720000;
-            CloseDoorTimer = 15000;
-
-            LastSuperSpell = rand()%3;
-
-            FlameWreathTimer = 0;
-            FlameWreathCheckTime = 0;
-
-            CurrentNormalSpell = 0;
-            ArcaneCooldown = 0;
-            FireCooldown = 0;
-            FrostCooldown = 0;
-
-            DrinkInterruptTimer = 10000;
-
-            ElementalsSpawned = false;
-            Drinking = false;
-            DrinkInturrupted = false;
+            Initialize();
 
             // Not in progress
             instance->SetData(TYPE_ARAN, NOT_STARTED);
@@ -192,7 +198,7 @@ public:
 
             //cut down to size if we have more than 3 targets
             while (targets.size() > 3)
-                targets.erase(targets.begin()+rand()%targets.size());
+                targets.erase(targets.begin() + rand32() % targets.size());
 
             uint32 i = 0;
             for (std::vector<Unit*>::const_iterator itr = targets.begin(); itr!= targets.end(); ++itr)
@@ -322,7 +328,7 @@ public:
                     //If no available spells wait 1 second and try again
                     if (AvailableSpells)
                     {
-                        CurrentNormalSpell = Spells[rand() % AvailableSpells];
+                        CurrentNormalSpell = Spells[rand32() % AvailableSpells];
                         DoCast(target, CurrentNormalSpell);
                     }
                 }
@@ -361,6 +367,10 @@ public:
                     case SUPER_BLIZZARD:
                         Available[0] = SUPER_FLAME;
                         Available[1] = SUPER_AE;
+                        break;
+                    default:
+                        Available[0] = 0;
+                        Available[1] = 0;
                         break;
                 }
 
@@ -508,13 +518,21 @@ public:
 
     struct water_elementalAI : public ScriptedAI
     {
-        water_elementalAI(Creature* creature) : ScriptedAI(creature) { }
+        water_elementalAI(Creature* creature) : ScriptedAI(creature)
+        {
+            Initialize();
+        }
+
+        void Initialize()
+        {
+            CastTimer = 2000 + (rand32() % 3000);
+        }
 
         uint32 CastTimer;
 
         void Reset() override
         {
-            CastTimer = 2000 + (rand()%3000);
+            Initialize();
         }
 
         void EnterCombat(Unit* /*who*/) override { }

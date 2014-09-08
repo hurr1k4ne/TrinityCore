@@ -92,8 +92,15 @@ public:
 
         aqsentinelAI(Creature* creature) : ScriptedAI(creature)
         {
-            ClearBuddyList();
+            Initialize();
             abselected = 0;                                     // just initialization of variable
+            ability = 0;
+        }
+
+        void Initialize()
+        {
+            ClearBuddyList();
+            gatherOthersWhenAggro = true;
         }
 
         uint64 NearbyGUID[3];
@@ -122,7 +129,7 @@ public:
 
         void GiveBuddyMyList(Creature* c)
         {
-            aqsentinelAI* cai = CAST_AI(aqsentinelAI, (c)->AI());
+            aqsentinelAI* cai = ENSURE_AI(aqsentinelAI, (c)->AI());
             for (int i=0; i<3; ++i)
                 if (NearbyGUID[i] && NearbyGUID[i] != c->GetGUID())
                     cai->AddBuddyToList(NearbyGUID[i]);
@@ -169,7 +176,7 @@ public:
         {
             for (int t = 0; t < 2; ++t)
             {
-                for (int i = !t ? (rand()%9) : 0; i < 9; ++i)
+                for (int i = !t ? (rand32()%9) : 0; i < 9; ++i)
                 {
                     if (!chosenAbilities[i])
                     {
@@ -183,8 +190,8 @@ public:
 
         void GetOtherSentinels(Unit* who)
         {
-            bool *chosenAbilities = new bool[9];
-            memset(chosenAbilities, 0, 9*sizeof(bool));
+            bool chosenAbilities[9];
+            memset(chosenAbilities, 0, sizeof(chosenAbilities));
             selectAbility(pickAbilityRandom(chosenAbilities));
 
             ClearBuddyList();
@@ -200,15 +207,13 @@ public:
                     break;
 
                 AddSentinelsNear(pNearby);
-                CAST_AI(aqsentinelAI, pNearby->AI())->gatherOthersWhenAggro = false;
-                CAST_AI(aqsentinelAI, pNearby->AI())->selectAbility(pickAbilityRandom(chosenAbilities));
+                ENSURE_AI(aqsentinelAI, pNearby->AI())->gatherOthersWhenAggro = false;
+                ENSURE_AI(aqsentinelAI, pNearby->AI())->selectAbility(pickAbilityRandom(chosenAbilities));
             }
             /*if (bli < 3)
                 DoYell("I dont have enough buddies.", LANG_NEUTRAL, 0);*/
             SendMyListToBuddies();
             CallBuddiesToAttack(who);
-
-            delete[] chosenAbilities;
         }
 
         bool gatherOthersWhenAggro;
@@ -228,8 +233,7 @@ public:
                     }
                 }
             }
-            ClearBuddyList();
-            gatherOthersWhenAggro = true;
+            Initialize();
         }
 
         void GainSentinelAbility(uint32 id)
@@ -256,7 +260,7 @@ public:
                 if (sent->isDead())
                     continue;
                 sent->ModifyHealth(int32(sent->CountPctFromMaxHealth(50)));
-                CAST_AI(aqsentinelAI, sent->AI())->GainSentinelAbility(ability);
+                ENSURE_AI(aqsentinelAI, sent->AI())->GainSentinelAbility(ability);
             }
         }
     };

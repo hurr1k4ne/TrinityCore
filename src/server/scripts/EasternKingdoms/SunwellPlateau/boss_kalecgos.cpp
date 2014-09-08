@@ -107,11 +107,28 @@ public:
     {
         boss_kalecgosAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
             instance = creature->GetInstanceScript();
-            SathGUID = 0;
-            DoorGUID = 0;
             bJustReset = false;
             me->setActive(true);
+        }
+
+        void Initialize()
+        {
+            SathGUID = 0;
+            ArcaneBuffetTimer = 8000;
+            FrostBreathTimer = 15000;
+            WildMagicTimer = 10000;
+            TailLashTimer = 25000;
+            SpectralBlastTimer = urand(20000, 25000);
+            CheckTimer = 1000;
+            ResetTimer = 30000;
+
+            TalkTimer = 0;
+            TalkSequence = 0;
+            isFriendly = false;
+            isEnraged = false;
+            isBanished = false;
         }
 
         InstanceScript* instance;
@@ -132,7 +149,6 @@ public:
         bool bJustReset;
 
         uint64 SathGUID;
-        uint64 DoorGUID;
 
         void Reset() override
         {
@@ -151,19 +167,6 @@ public:
                 me->SetStandState(UNIT_STAND_STATE_SLEEP);
             }
             me->SetFullHealth(); //dunno why it does not resets health at evade..
-            ArcaneBuffetTimer = 8000;
-            FrostBreathTimer = 15000;
-            WildMagicTimer = 10000;
-            TailLashTimer = 25000;
-            SpectralBlastTimer = urand(20000, 25000);
-            CheckTimer = 1000;
-            ResetTimer = 30000;
-
-            TalkTimer = 0;
-            TalkSequence = 0;
-            isFriendly = false;
-            isEnraged = false;
-            isBanished = false;
         }
 
         void EnterEvadeMode() override
@@ -285,7 +288,7 @@ public:
 
                 if (WildMagicTimer <= diff)
                 {
-                    DoCastAOE(WildMagic[rand()%6]);
+                    DoCastAOE(WildMagic[rand32() % 6]);
                     WildMagicTimer = 20000;
                 } else WildMagicTimer -= diff;
 
@@ -312,11 +315,11 @@ public:
                     }
 
                     std::list<Unit*>::const_iterator i = targetList.begin();
-                    advance(i, rand()%targetList.size());
+                    advance(i, rand32() % targetList.size());
                     if ((*i))
                     {
                         (*i)->CastSpell((*i), SPELL_SPECTRAL_BLAST, true);
-                        SpectralBlastTimer = 20000+rand()%5000;
+                        SpectralBlastTimer = 20000 + rand32() % 5000;
                     } else SpectralBlastTimer = 1000;
                 } else SpectralBlastTimer -= diff;
 
@@ -459,19 +462,26 @@ public:
 
         boss_kalecAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
             instance = creature->GetInstanceScript();
+            SathGUID = 0;
         }
 
-        void Reset() override
+        void Initialize()
         {
-            SathGUID = instance->GetData64(DATA_SATHROVARR);
-
             RevitalizeTimer = 5000;
             HeroicStrikeTimer = 3000;
             YellTimer = 5000;
             YellSequence = 0;
 
             isEnraged = false;
+        }
+
+        void Reset() override
+        {
+            SathGUID = instance->GetData64(DATA_SATHROVARR);
+
+            Initialize();
         }
 
         void DamageTaken(Unit* done_by, uint32 &damage) override
@@ -581,9 +591,21 @@ public:
     {
         boss_sathrovarrAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
             instance = creature->GetInstanceScript();
             KalecGUID = 0;
             KalecgosGUID = 0;
+        }
+
+        void Initialize()
+        {
+            ShadowBoltTimer = urand(7, 10) * 1000;
+            AgonyCurseTimer = 20000;
+            CorruptionStrikeTimer = 13000;
+            CheckTimer = 1000;
+            ResetThreat = 1000;
+            isEnraged = false;
+            isBanished = false;
         }
 
         InstanceScript* instance;
@@ -613,13 +635,7 @@ public:
                 KalecGUID = 0;
             }
 
-            ShadowBoltTimer = urand(7, 10) * 1000;
-            AgonyCurseTimer = 20000;
-            CorruptionStrikeTimer = 13000;
-            CheckTimer = 1000;
-            ResetThreat = 1000;
-            isEnraged = false;
-            isBanished = false;
+            Initialize();
 
             me->CastSpell(me, AURA_DEMONIC_VISUAL, true);
             TeleportAllPlayersBack();
@@ -650,8 +666,8 @@ public:
                 TeleportAllPlayersBack();
                 if (Creature* Kalecgos = ObjectAccessor::GetCreature(*me, KalecgosGUID))
                 {
-                    CAST_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->TalkTimer = 1;
-                    CAST_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->isFriendly = false;
+                    ENSURE_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->TalkTimer = 1;
+                    ENSURE_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->isFriendly = false;
                 }
                 EnterEvadeMode();
                 return;
@@ -666,8 +682,8 @@ public:
             TeleportAllPlayersBack();
             if (Creature* Kalecgos = ObjectAccessor::GetCreature(*me, KalecgosGUID))
             {
-                CAST_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->TalkTimer = 1;
-                CAST_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->isFriendly = true;
+                ENSURE_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->TalkTimer = 1;
+                ENSURE_AI(boss_kalecgos::boss_kalecgosAI, Kalecgos->AI())->isFriendly = true;
             }
 
             instance->SetBossState(DATA_KALECGOS, DONE);
@@ -775,10 +791,10 @@ public:
 
             if (ShadowBoltTimer <= diff)
             {
-                if (!(rand()%5))
+                if (!(rand32() % 5))
                     Talk(SAY_SATH_SPELL1);
                 DoCast(me, SPELL_SHADOW_BOLT);
-                ShadowBoltTimer = 7000+(rand()%3000);
+                ShadowBoltTimer = 7000 + (rand32() % 3000);
             } else ShadowBoltTimer -= diff;
 
             if (AgonyCurseTimer <= diff)
@@ -792,7 +808,7 @@ public:
 
             if (CorruptionStrikeTimer <= diff)
             {
-                if (!(rand()%5))Talk(SAY_SATH_SPELL2);
+                if (!(rand32() % 5))Talk(SAY_SATH_SPELL2);
                 DoCastVictim(SPELL_CORRUPTION_STRIKE);
                 CorruptionStrikeTimer = 13000;
             } else CorruptionStrikeTimer -= diff;

@@ -287,10 +287,10 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             switch (team)
             {
                 case ALLIANCE:
-                    disabled = mask & (1 << 0);
+                    disabled = (mask & (1 << 0)) != 0;
                     break;
                 case HORDE:
-                    disabled = mask & (1 << 1);
+                    disabled = (mask & (1 << 1)) != 0;
                     break;
             }
 
@@ -696,10 +696,15 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
 {
     uint64 guid;
     recvData >> guid;
+    // Initiating
+    uint32 initAccountId = GetAccountId();
 
     // can't delete loaded character
     if (ObjectAccessor::FindPlayer(guid))
+    {
+        sScriptMgr->OnPlayerFailedDelete(guid, initAccountId);
         return;
+    }
 
     uint32 accountId = 0;
     uint8 level = 0;
@@ -708,6 +713,7 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
     // is guild leader
     if (sGuildMgr->GetGuildByLeader(guid))
     {
+        sScriptMgr->OnPlayerFailedDelete(guid, initAccountId);
         WorldPacket data(SMSG_CHAR_DELETE, 1);
         data << uint8(CHAR_DELETE_FAILED_GUILD_LEADER);
         SendPacket(&data);
@@ -717,6 +723,7 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
     // is arena team captain
     if (sArenaTeamMgr->GetArenaTeamByCaptain(guid))
     {
+        sScriptMgr->OnPlayerFailedDelete(guid, initAccountId);
         WorldPacket data(SMSG_CHAR_DELETE, 1);
         data << uint8(CHAR_DELETE_FAILED_ARENA_CAPTAIN);
         SendPacket(&data);
@@ -735,12 +742,18 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
     }
 
     // prevent deleting other players' characters using cheating tools
-    if (accountId != GetAccountId())
+    if (accountId != initAccountId)
+    {
+        sScriptMgr->OnPlayerFailedDelete(guid, initAccountId);
         return;
+    }
 
     std::string IP_str = GetRemoteAddress();
     TC_LOG_INFO("entities.player.character", "Account: %d, IP: %s deleted character: %s, GUID: %u, Level: %u", accountId, IP_str.c_str(), name.c_str(), GUID_LOPART(guid), level);
-    sScriptMgr->OnPlayerDelete(guid);
+
+    // To prevent hook failure, place hook before removing reference from DB
+    sScriptMgr->OnPlayerDelete(guid, initAccountId); // To prevent race conditioning, but as it also makes sense, we hand the accountId over for successful delete.
+    // Shouldn't interfere with character deletion though
 
     if (sLog->ShouldLog("entities.player.dump", LOG_LEVEL_INFO)) // optimize GetPlayerDump call
     {
@@ -965,8 +978,8 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     {
         // not blizz like, we must correctly save and load player instead...
         if (pCurrChar->getRace() == RACE_NIGHTELF)
-            pCurrChar->CastSpell(pCurrChar, 20584, true, 0);// auras SPELL_AURA_INCREASE_SPEED(+speed in wisp form), SPELL_AURA_INCREASE_SWIM_SPEED(+swim speed in wisp form), SPELL_AURA_TRANSFORM (to wisp form)
-        pCurrChar->CastSpell(pCurrChar, 8326, true, 0);     // auras SPELL_AURA_GHOST, SPELL_AURA_INCREASE_SPEED(why?), SPELL_AURA_INCREASE_SWIM_SPEED(why?)
+            pCurrChar->CastSpell(pCurrChar, 20584, true, nullptr);// auras SPELL_AURA_INCREASE_SPEED(+speed in wisp form), SPELL_AURA_INCREASE_SWIM_SPEED(+swim speed in wisp form), SPELL_AURA_TRANSFORM (to wisp form)
+        pCurrChar->CastSpell(pCurrChar, 8326, true, nullptr);     // auras SPELL_AURA_GHOST, SPELL_AURA_INCREASE_SPEED(why?), SPELL_AURA_INCREASE_SWIM_SPEED(why?)
 
         pCurrChar->SetMovement(MOVE_WATER_WALK);
     }
@@ -990,18 +1003,19 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     // Apply at_login requests
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_RESET_SPELLS))
     {
-        pCurrChar->resetSpells();
+        pCurrChar->ResetSpells();
         SendNotification(LANG_RESET_SPELLS);
     }
 
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_RESET_TALENTS))
     {
-        pCurrChar->resetTalents(true);
+        pCurrChar->ResetTalents(true);
         pCurrChar->SendTalentsInfoData(false);              // original talents send already in to SendInitialPacketsBeforeAddToMap, resend reset state
         SendNotification(LANG_RESET_TALENTS);
     }
 
-    if (pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST))
+    bool firstLogin = pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST);
+    if (firstLogin)
         pCurrChar->RemoveAtLoginFlag(AT_LOGIN_FIRST);
 
     // show time before shutdown if shutdown planned.
@@ -1026,7 +1040,8 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     // Handle Login-Achievements (should be handled after loading)
     _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ON_LOGIN, 1);
 
-    sScriptMgr->OnPlayerLogin(pCurrChar);
+    sScriptMgr->OnPlayerLogin(pCurrChar, firstLogin);
+
     delete holder;
 }
 
@@ -1040,7 +1055,7 @@ void WorldSession::HandleSetFactionAtWar(WorldPacket& recvData)
     recvData >> repListID;
     recvData >> flag;
 
-    GetPlayer()->GetReputationMgr().SetAtWar(repListID, flag);
+    GetPlayer()->GetReputationMgr().SetAtWar(repListID, flag != 0);
 }
 
 //I think this function is never used :/ I dunno, but i guess this opcode not exists
@@ -1093,7 +1108,7 @@ void WorldSession::HandleSetFactionInactiveOpcode(WorldPacket& recvData)
     uint8 inactive;
     recvData >> replistid >> inactive;
 
-    _player->GetReputationMgr().SetInactive(replistid, inactive);
+    _player->GetReputationMgr().SetInactive(replistid, inactive != 0);
 }
 
 void WorldSession::HandleShowingHelmOpcode(WorldPacket& recvData)

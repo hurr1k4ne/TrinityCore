@@ -75,7 +75,7 @@ class npc_forest_frog : public CreatureScript
             void DoSpawnRandom()
             {
                 uint32 cEntry = 0;
-                switch (rand()%10)
+                switch (rand32() % 10)
                 {
                     case 0: cEntry = 24397; break;          //Mannuth
                     case 1: cEntry = 24403; break;          //Deez
@@ -90,9 +90,9 @@ class npc_forest_frog : public CreatureScript
                 }
 
                 if (!instance->GetData(TYPE_RAND_VENDOR_1))
-                    if (rand()%10 == 1) cEntry = 24408;      //Gunter
+                    if (rand32() % 10 == 1) cEntry = 24408;      //Gunter
                 if (!instance->GetData(TYPE_RAND_VENDOR_2))
-                    if (rand()%10 == 1) cEntry = 24409;      //Kyren
+                    if (rand32() % 10 == 1) cEntry = 24409;      //Kyren
 
                 if (cEntry) me->UpdateEntry(cEntry);
 
@@ -105,7 +105,7 @@ class npc_forest_frog : public CreatureScript
                 if (spell->Id == SPELL_REMOVE_AMANI_CURSE && caster->GetTypeId() == TYPEID_PLAYER && me->GetEntry() == NPC_FOREST_FROG)
                 {
                     //increase or decrease chance of mojo?
-                    if (rand()%99 == 50) DoCast(caster, SPELL_PUSH_MOJO, true);
+                    if (rand32() % 99 == 50) DoCast(caster, SPELL_PUSH_MOJO, true);
                     else DoSpawnRandom();
                 }
             }
@@ -130,38 +130,6 @@ class npc_zulaman_hostage : public CreatureScript
 {
     public:
         npc_zulaman_hostage() : CreatureScript("npc_zulaman_hostage") { }
-
-        struct npc_zulaman_hostageAI : public ScriptedAI
-        {
-            npc_zulaman_hostageAI(Creature* creature) : ScriptedAI(creature)
-            {
-                IsLoot = false;
-            }
-
-            bool IsLoot;
-            uint64 PlayerGUID;
-
-            void Reset() override { }
-
-            void EnterCombat(Unit* /*who*/) override { }
-
-            void JustDied(Unit* /*killer*/) override
-            {
-                if (Player* player = ObjectAccessor::GetPlayer(*me, PlayerGUID))
-                    player->SendLoot(me->GetGUID(), LOOT_CORPSE);
-            }
-
-            void UpdateAI(uint32 /*diff*/) override
-            {
-                if (IsLoot)
-                    DoCast(me, 7, false);
-            }
-        };
-
-        CreatureAI* GetAI(Creature* creature) const override
-        {
-            return new npc_zulaman_hostageAI(creature);
-        }
 
         bool OnGossipHello(Player* player, Creature* creature) override
         {
@@ -276,7 +244,15 @@ class npc_harrison_jones : public CreatureScript
         {
             npc_harrison_jonesAI(Creature* creature) : ScriptedAI(creature)
             {
+                Initialize();
                 instance = creature->GetInstanceScript();
+            }
+
+            void Initialize()
+            {
+                _gongEvent = 0;
+                _gongTimer = 0;
+                uiTargetGUID = 0;
             }
 
             InstanceScript* instance;
@@ -287,9 +263,7 @@ class npc_harrison_jones : public CreatureScript
 
             void Reset() override
             {
-                _gongEvent = 0;
-                _gongTimer = 0;
-                uiTargetGUID = 0;
+                Initialize();
             }
 
             void EnterCombat(Unit* /*who*/) override { }

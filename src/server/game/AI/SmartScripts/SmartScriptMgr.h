@@ -466,7 +466,7 @@ enum SMART_ACTION
     SMART_ACTION_SET_VISIBILITY                     = 47,     // on/off
     SMART_ACTION_SET_ACTIVE                         = 48,     // on/off
     SMART_ACTION_ATTACK_START                       = 49,     //
-    SMART_ACTION_SUMMON_GO                          = 50,     // GameObjectID, DespawnTime in ms,
+    SMART_ACTION_SUMMON_GO                          = 50,     // GameObjectID, DespawnTime in s
     SMART_ACTION_KILL_UNIT                          = 51,     //
     SMART_ACTION_ACTIVATE_TAXI                      = 52,     // TaxiID
     SMART_ACTION_WP_START                           = 53,     // run/walk, pathID, canRepeat, quest, despawntime, reactState
@@ -529,8 +529,9 @@ enum SMART_ACTION
     SMART_ACTION_REMOVE_POWER                       = 110,    // PowerType, newPower
     SMART_ACTION_GAME_EVENT_STOP                    = 111,    // GameEventId
     SMART_ACTION_GAME_EVENT_START                   = 112,    // GameEventId
+    SMART_ACTION_START_CLOSEST_WAYPOINT             = 113,    // wp1, wp2, wp3, wp4, wp5, wp6, wp7
 
-    SMART_ACTION_END                                = 113
+    SMART_ACTION_END                                = 114
 };
 
 struct SmartAction
@@ -987,6 +988,16 @@ struct SmartAction
             uint32 id;
         } gameEventStart;
 
+        struct
+        {
+            uint32 wp1;
+            uint32 wp2;
+            uint32 wp3;
+            uint32 wp4;
+            uint32 wp5;
+            uint32 wp6;
+        } closestWaypointFromList;
+
         //! Note for any new future actions
         //! All parameters must have type uint32
 
@@ -1396,10 +1407,16 @@ typedef std::unordered_map<uint32, ObjectGuidList*> ObjectListMap;
 
 class SmartWaypointMgr
 {
-    friend class ACE_Singleton<SmartWaypointMgr, ACE_Null_Mutex>;
-    SmartWaypointMgr() { }
-    public:
+    private:
+        SmartWaypointMgr() { }
         ~SmartWaypointMgr();
+
+    public:
+        static SmartWaypointMgr* instance()
+        {
+            static SmartWaypointMgr instance;
+            return &instance;
+        }
 
         void LoadFromDB();
 
@@ -1407,7 +1424,7 @@ class SmartWaypointMgr
         {
             if (waypoint_map.find(id) != waypoint_map.end())
                 return waypoint_map[id];
-            else return 0;
+            else return nullptr;
         }
 
     private:
@@ -1426,10 +1443,16 @@ typedef std::pair<CacheSpellContainer::const_iterator, CacheSpellContainer::cons
 
 class SmartAIMgr
 {
-    friend class ACE_Singleton<SmartAIMgr, ACE_Null_Mutex>;
-    SmartAIMgr() { }
-    public:
+    private:
+        SmartAIMgr() { }
         ~SmartAIMgr() { }
+
+    public:
+        static SmartAIMgr* instance()
+        {
+            static SmartAIMgr instance;
+            return &instance;
+        }
 
         void LoadSmartAIFromDB();
 
@@ -1598,6 +1621,6 @@ class SmartAIMgr
         CacheSpellContainer KillCreditSpellStore;
 };
 
-#define sSmartScriptMgr ACE_Singleton<SmartAIMgr, ACE_Null_Mutex>::instance()
-#define sSmartWaypointMgr ACE_Singleton<SmartWaypointMgr, ACE_Null_Mutex>::instance()
+#define sSmartScriptMgr SmartAIMgr::instance()
+#define sSmartWaypointMgr SmartWaypointMgr::instance()
 #endif

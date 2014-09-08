@@ -56,8 +56,18 @@ public:
     {
         boss_kazrogalAI(Creature* creature) : hyjal_trashAI(creature)
         {
+            Initialize();
             instance = creature->GetInstanceScript();
             go = false;
+        }
+
+        void Initialize()
+        {
+            damageTaken = 0;
+            CleaveTimer = 5000;
+            WarStompTimer = 15000;
+            MarkTimer = 45000;
+            MarkTimerBase = 45000;
         }
 
         uint32 CleaveTimer;
@@ -68,11 +78,7 @@ public:
 
         void Reset() override
         {
-            damageTaken = 0;
-            CleaveTimer = 5000;
-            WarStompTimer = 15000;
-            MarkTimer = 45000;
-            MarkTimerBase = 45000;
+            Initialize();
 
             if (IsEvent)
                 instance->SetData(DATA_KAZROGALEVENT, NOT_STARTED);
@@ -137,7 +143,7 @@ public:
             if (CleaveTimer <= diff)
             {
                 DoCast(me, SPELL_CLEAVE);
-                CleaveTimer = 6000+rand()%15000;
+                CleaveTimer = 6000 + rand32() % 15000;
             } else CleaveTimer -= diff;
 
             if (WarStompTimer <= diff)

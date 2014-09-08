@@ -19,8 +19,8 @@
 #ifndef TRINITY_SHAREDDEFINES_H
 #define TRINITY_SHAREDDEFINES_H
 
-#include "DetourNavMesh.h"
 #include "Define.h"
+#include "DetourNavMesh.h"
 #include <cassert>
 
 enum SpellEffIndex
@@ -397,7 +397,7 @@ enum SpellAttr3
     SPELL_ATTR3_MAIN_HAND                        = 0x00000400, // 10 Main hand weapon required
     SPELL_ATTR3_BATTLEGROUND                     = 0x00000800, // 11 Can only be cast in battleground
     SPELL_ATTR3_ONLY_TARGET_GHOSTS               = 0x00001000, // 12
-    SPELL_ATTR3_UNK13                            = 0x00002000, // 13
+    SPELL_ATTR3_DONT_DISPLAY_CHANNEL_BAR         = 0x00002000, // 13 Clientside attribute - will not display channeling bar
     SPELL_ATTR3_IS_HONORLESS_TARGET              = 0x00004000, // 14 "Honorless Target" only this spells have this flag
     SPELL_ATTR3_UNK15                            = 0x00008000, // 15 Auto Shoot, Shoot, Throw,  - this is autoshot flag
     SPELL_ATTR3_CANT_TRIGGER_PROC                = 0x00010000, // 16 confirmed with many patchnotes
@@ -529,7 +529,7 @@ enum SpellAttr6
 enum SpellAttr7
 {
     SPELL_ATTR7_UNK0                             = 0x00000001, //  0 Shaman's new spells (Call of the ...), Feign Death.
-    SPELL_ATTR7_UNK1                             = 0x00000002, //  1 Not set in 3.2.2a.
+    SPELL_ATTR7_IGNORE_DURATION_MODS             = 0x00000002, //  1 Duration is not affected by duration modifiers
     SPELL_ATTR7_REACTIVATE_AT_RESURRECT          = 0x00000004, //  2 Paladin's auras and 65607 only.
     SPELL_ATTR7_IS_CHEAT_SPELL                   = 0x00000008, //  3 Cannot cast if caster doesn't have UnitFlag2 & UNIT_FLAG2_ALLOW_CHEAT_SPELLS
     SPELL_ATTR7_UNK4                             = 0x00000010, //  4 Only 47883 (Soulstone Resurrection) and test spell.
@@ -2586,7 +2586,7 @@ enum CreatureTypeFlags
     CREATURE_TYPEFLAGS_DEAD_INTERACT    = 0x00000080,         // Player can interact with the creature if its dead (not player dead)
     CREATURE_TYPEFLAGS_HERBLOOT         = 0x00000100,         // Can be looted by herbalist
     CREATURE_TYPEFLAGS_MININGLOOT       = 0x00000200,         // Can be looted by miner
-    CREATURE_TYPEFLAGS_UNK10            = 0x00000400,
+    CREATURE_TYPEFLAGS_DONT_LOG_DEATH   = 0x00000400,         // Death event will not show up in combat log
     CREATURE_TYPEFLAGS_MOUNTED_COMBAT   = 0x00000800,         // Creature can remain mounted when entering combat
     CREATURE_TYPEFLAGS_AID_PLAYERS      = 0x00001000,         // ? Can aid any player in combat if in range?
     CREATURE_TYPEFLAGS_UNK13            = 0x00002000,
@@ -2595,7 +2595,7 @@ enum CreatureTypeFlags
     CREATURE_TYPEFLAGS_EXOTIC           = 0x00010000,         // Can be tamed by hunter as exotic pet
     CREATURE_TYPEFLAGS_UNK17            = 0x00020000,         // ? Related to vehicles/pvp?
     CREATURE_TYPEFLAGS_UNK18            = 0x00040000,         // ? Related to vehicle/siege weapons?
-    CREATURE_TYPEFLAGS_UNK19            = 0x00080000,
+    CREATURE_TYPEFLAGS_PROJECTILE_COLLISION = 0x00080000,     // Projectiles can collide with this creature - interacts with TARGET_DEST_TRAJ
     CREATURE_TYPEFLAGS_UNK20            = 0x00100000,
     CREATURE_TYPEFLAGS_UNK21            = 0x00200000,
     CREATURE_TYPEFLAGS_UNK22            = 0x00400000,
@@ -3309,6 +3309,15 @@ enum BanReturn
     BAN_NOTFOUND
 };
 
+enum BattlegroundTeamId
+{
+    BG_TEAM_HORDE       = 0, // Battleground: Horde,    Arena: Green
+    BG_TEAM_ALLIANCE    = 1, // Battleground: Alliance, Arena: Gold
+    BG_TEAM_NEUTRAL     = 2  // Battleground: Neutral,  Arena: None
+};
+
+#define BG_TEAMS_COUNT  2
+
 // indexes of BattlemasterList.dbc
 enum BattlegroundTypeId
 {
@@ -3391,7 +3400,7 @@ enum TradeStatus
     TRADE_STATUS_NO_TARGET      = 6,
     TRADE_STATUS_BACK_TO_TRADE  = 7,
     TRADE_STATUS_TRADE_COMPLETE = 8,
-    // 9?
+    TRADE_STATUS_TRADE_REJECTED = 9,
     TRADE_STATUS_TARGET_TO_FAR  = 10,
     TRADE_STATUS_WRONG_FACTION  = 11,
     TRADE_STATUS_CLOSE_WINDOW   = 12,
@@ -3404,8 +3413,8 @@ enum TradeStatus
     TRADE_STATUS_YOU_LOGOUT     = 19,
     TRADE_STATUS_TARGET_LOGOUT  = 20,
     TRADE_STATUS_TRIAL_ACCOUNT  = 21,                       // Trial accounts can not perform that action
-    TRADE_STATUS_ONLY_CONJURED  = 22,                       // You can only trade conjured items... (cross realm BG related).
-    TRADE_STATUS_NOT_ELIGIBLE   = 23                        // Related to trading soulbound loot items
+    TRADE_STATUS_WRONG_REALM    = 22,                       // You can only trade conjured items... (cross realm BG related).
+    TRADE_STATUS_NOT_ON_TAPLIST = 23                        // Related to trading soulbound loot items
 };
 
 enum XPColorChar
@@ -3448,6 +3457,7 @@ enum DuelCompleteType
     DUEL_WON         = 1,
     DUEL_FLED        = 2
 };
+
 // handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time
 enum BattlegroundQueueTypeId
 {

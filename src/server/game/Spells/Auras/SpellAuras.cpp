@@ -35,6 +35,7 @@
 #include "ScriptMgr.h"
 #include "SpellScript.h"
 #include "Vehicle.h"
+#include "Config.h"
 
 AuraApplication::AuraApplication(Unit* target, Unit* caster, Aura* aura, uint8 effMask):
 _target(target), _base(aura), _removeMode(AURA_REMOVE_NONE), _slot(MAX_AURAS),
@@ -335,7 +336,7 @@ m_spellInfo(spellproto), m_casterGuid(casterGUID ? casterGUID : caster->GetGUID(
 m_castItemGuid(castItem ? castItem->GetGUID() : 0), m_applyTime(time(NULL)),
 m_owner(owner), m_timeCla(0), m_updateTargetMapInterval(0),
 m_casterLevel(caster ? caster->getLevel() : m_spellInfo->SpellLevel), m_procCharges(0), m_stackAmount(1),
-m_isRemoved(false), m_isSingleTarget(false), m_isUsingCharges(false)
+m_isRemoved(false), m_isSingleTarget(false), m_isUsingCharges(false), m_dropEvent(nullptr)
 {
     if (m_spellInfo->ManaPerSecond || m_spellInfo->ManaPerSecondPerLevel)
         m_timeCla = 1 * IN_MILLISECONDS;
@@ -466,6 +467,12 @@ void Aura::_Remove(AuraRemoveMode removeMode)
         Unit* target = aurApp->GetTarget();
         target->_UnapplyAura(aurApp, removeMode);
         appItr = m_applications.begin();
+    }
+
+    if (m_dropEvent)
+    {
+        m_dropEvent->to_Abort = true;
+        m_dropEvent = nullptr;
     }
 }
 
@@ -694,21 +701,12 @@ void Aura::Update(uint32 diff, Unit* caster)
                         if (int32(caster->GetHealth()) > manaPerSecond)
                             caster->ModifyHealth(-manaPerSecond);
                         else
-                        {
                             Remove();
-                            return;
-                        }
                     }
+                    else if (int32(caster->GetPower(powertype)) >= manaPerSecond)
+                        caster->ModifyPower(powertype, -manaPerSecond);
                     else
-                    {
-                        if (int32(caster->GetPower(powertype)) >= manaPerSecond)
-                            caster->ModifyPower(powertype, -manaPerSecond);
-                        else
-                        {
-                            Remove();
-                            return;
-                        }
-                    }
+                        Remove();
                 }
             }
         }
@@ -734,17 +732,17 @@ int32 Aura::CalcMaxDuration(Unit* caster) const
     // IsPermanent() checks max duration (which we are supposed to calculate here)
     if (maxDuration != -1 && modOwner)
         modOwner->ApplySpellMod(GetId(), SPELLMOD_DURATION, maxDuration);
+
     return maxDuration;
 }
 
 void Aura::SetDuration(int32 duration, bool withMods)
 {
     if (withMods)
-    {
         if (Unit* caster = GetCaster())
             if (Player* modOwner = caster->GetSpellModOwner())
                 modOwner->ApplySpellMod(GetId(), SPELLMOD_DURATION, duration);
-    }
+
     m_duration = duration;
     SetNeedClientUpdateForTargets();
 }
@@ -782,6 +780,7 @@ void Aura::SetCharges(uint8 charges)
 {
     if (m_procCharges == charges)
         return;
+
     m_procCharges = charges;
     m_isUsingCharges = m_procCharges != 0;
     SetNeedClientUpdateForTargets();
@@ -796,6 +795,7 @@ uint8 Aura::CalcMaxCharges(Unit* caster) const
     if (caster)
         if (Player* modOwner = caster->GetSpellModOwner())
             modOwner->ApplySpellMod(GetId(), SPELLMOD_CHARGES, maxProcCharges);
+
     return maxProcCharges;
 }
 
@@ -818,7 +818,28 @@ bool Aura::ModCharges(int32 num, AuraRemoveMode removeMode)
 
         SetCharges(charges);
     }
+
     return false;
+}
+
+void Aura::ModChargesDelayed(int32 num, AuraRemoveMode removeMode)
+{
+    m_dropEvent = nullptr;
+    ModCharges(num, removeMode);
+}
+
+void Aura::DropChargeDelayed(uint32 delay, AuraRemoveMode removeMode)
+{
+    // aura is already during delayed charge drop
+    if (m_dropEvent)
+        return;
+    // only units have events
+    Unit* owner = m_owner->ToUnit();
+    if (!owner)
+        return;
+
+    m_dropEvent = new ChargeDropEvent(this, removeMode);
+    owner->m_Events.AddEvent(m_dropEvent, owner->m_Events.CalculateTime(delay));
 }
 
 void Aura::SetStackAmount(uint8 stackAmount)
@@ -886,6 +907,7 @@ bool Aura::ModStackAmount(int32 num, AuraRemoveMode removeMode)
                     if (SpellModifier* mod = aurEff->GetSpellModifier())
                         mod->charges = GetCharges();
     }
+
     SetNeedClientUpdateForTargets();
     return false;
 }
@@ -901,10 +923,8 @@ bool Aura::HasMoreThanOneEffectForType(AuraType auraType) const
 {
     uint32 count = 0;
     for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-    {
-        if (HasEffect(i) && GetSpellInfo()->Effects[i].ApplyAuraName == auraType)
+        if (HasEffect(i) && AuraType(GetSpellInfo()->Effects[i].ApplyAuraName) == auraType)
             ++count;
-    }
 
     return count > 1;
 }
@@ -912,10 +932,9 @@ bool Aura::HasMoreThanOneEffectForType(AuraType auraType) const
 bool Aura::IsArea() const
 {
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-    {
         if (HasEffect(i) && GetSpellInfo()->Effects[i].IsAreaAuraEffect())
             return true;
-    }
+
     return false;
 }
 
@@ -1044,7 +1063,7 @@ void Aura::SetLoadedState(int32 maxduration, int32 duration, int32 charges, uint
         if (m_effects[i])
         {
             m_effects[i]->SetAmount(amount[i]);
-            m_effects[i]->SetCanBeRecalculated(recalculateMask & (1<<i));
+            m_effects[i]->SetCanBeRecalculated((recalculateMask & (1 << i)) != 0);
             m_effects[i]->CalculatePeriodic(caster, false, true);
             m_effects[i]->CalculateSpellMod();
             m_effects[i]->RecalculateAmount(caster);
@@ -1303,7 +1322,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                     {
                         // instantly heal m_amount% of the absorb-value
                         int32 heal = glyph->GetAmount() * GetEffect(0)->GetAmount()/100;
-                        caster->CastCustomSpell(GetUnitOwner(), 56160, &heal, NULL, NULL, true, 0, GetEffect(0));
+                        caster->CastCustomSpell(GetUnitOwner(), 56160, &heal, nullptr, nullptr, true, nullptr, GetEffect(0));
                     }
                 }
                 break;
@@ -1766,6 +1785,15 @@ bool Aura::CanStackWith(Aura const* existingAura) const
             || m_spellInfo->Effects[i].TriggerSpell == existingAura->GetId())
             return true;
     }
+
+    // Check for custom server setting to allow tracking both Herbs and Minerals
+    // Note: The following are client limitations and cannot be coded for:
+    //  * The minimap tracking icon will display whichever skill is activated second
+    //  * The minimap tracking list will only show a check mark next to the last skill activated
+    //    Sometimes this bugs out and doesn't switch the check mark. It has no effect on the actual tracking though.
+    //  * The minimap dots are yellow for both resources
+    if (m_spellInfo->HasAura(SPELL_AURA_TRACK_RESOURCES) && existingSpellInfo->HasAura(SPELL_AURA_TRACK_RESOURCES))
+        return sWorld->getBoolConfig(CONFIG_ALLOW_TRACK_BOTH_RESOURCES);
 
     // check spell specific stack rules
     if (m_spellInfo->IsAuraExclusiveBySpecificWith(existingSpellInfo)
@@ -2546,3 +2574,9 @@ void DynObjAura::FillTargetMap(std::map<Unit*, uint8> & targets, Unit* /*caster*
     }
 }
 
+bool ChargeDropEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    // _base is always valid (look in Aura::_Remove())
+    _base->ModChargesDelayed(-1, _mode);
+    return true;
+}

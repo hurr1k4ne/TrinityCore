@@ -178,14 +178,20 @@ public:
     {
         npc_rinjiAI(Creature* creature) : npc_escortAI(creature)
         {
+            Initialize();
             _IsByOutrunner = false;
             spawnId = 0;
         }
 
-        void Reset() override
+        void Initialize()
         {
             postEventCount = 0;
             postEventTimer = 3000;
+        }
+
+        void Reset() override
+        {
+            Initialize();
         }
 
         void JustRespawned() override
@@ -207,7 +213,7 @@ public:
                     _IsByOutrunner = true;
                 }
 
-                if (rand()%4)
+                if (rand32() % 4)
                     return;
 
                 //only if attacked and escorter is not in combat?
