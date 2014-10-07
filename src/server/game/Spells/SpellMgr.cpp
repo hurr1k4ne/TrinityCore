@@ -973,10 +973,10 @@ bool SpellMgr::CanSpellTriggerProcOnEvent(SpellProcEntry const& procEntry, ProcE
     // check spell family name/flags (if set) for spells
     if (eventInfo.GetTypeMask() & (PERIODIC_PROC_FLAG_MASK | SPELL_PROC_FLAG_MASK | PROC_FLAG_DONE_TRAP_ACTIVATION))
     {
-        if (procEntry.spellFamilyName && (procEntry.spellFamilyName != eventInfo.GetSpellInfo()->SpellFamilyName))
+        if (procEntry.spellFamilyName && eventInfo.GetSpellInfo() && (procEntry.spellFamilyName != eventInfo.GetSpellInfo()->SpellFamilyName))
             return false;
 
-        if (procEntry.spellFamilyMask && !(procEntry.spellFamilyMask & eventInfo.GetSpellInfo()->SpellFamilyFlags))
+        if (procEntry.spellFamilyMask && eventInfo.GetSpellInfo() && !(procEntry.spellFamilyMask & eventInfo.GetSpellInfo()->SpellFamilyFlags))
             return false;
     }
 
@@ -3317,6 +3317,11 @@ void SpellMgr::LoadSpellInfoCorrections()
                 break;
             case 17364: // Stormstrike
                 spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 51798: // Brewfest - Relay Race - Intro - Quest Complete
+            case 47134: // Quest Complete
+                //! HACK: This spell break quest complete for alliance and on retail not used °_O
+                spellInfo->Effects[EFFECT_0].Effect = 0;
                 break;
             // ULDUAR SPELLS
             //

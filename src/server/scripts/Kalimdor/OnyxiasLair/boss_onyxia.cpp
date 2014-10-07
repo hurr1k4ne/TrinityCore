@@ -131,39 +131,41 @@ public:
     {
         boss_onyxiaAI(Creature* creature) : BossAI(creature, DATA_ONYXIA)
         {
-            Reset();
+            Initialize();
         }
 
-        void Reset() override
+        void Initialize()
         {
-            if (!IsCombatMovementAllowed())
-                SetCombatMovement(true);
-
-            _Reset();
-
             Phase = PHASE_START;
             MovePoint = urand(0, 5);
             PointData = GetMoveData();
             SummonWhelpCount = 0;
+            triggerGUID.Clear();
+            tankGUID.Clear();
             IsMoving = false;
+        }
 
+        void Reset() override
+        {
+            Initialize();
+
+            if (!IsCombatMovementAllowed())
+                SetCombatMovement(true);
+
+            _Reset();
+            me->SetReactState(REACT_AGGRESSIVE);
             instance->SetData(DATA_ONYXIA_PHASE, Phase);
             instance->DoStopTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMED_START_EVENT);
         }
 
         void EnterCombat(Unit* /*who*/) override
         {
+            _EnterCombat();
             Talk(SAY_AGGRO);
-            me->SetInCombatWithZone();
-
-            events.Reset();
-
             events.ScheduleEvent(EVENT_FLAME_BREATH, urand(10000, 20000));
             events.ScheduleEvent(EVENT_TAIL_SWEEP, urand(15000, 20000));
             events.ScheduleEvent(EVENT_CLEAVE, urand(2000, 5000));
             events.ScheduleEvent(EVENT_WING_BUFFET, urand(10000, 20000));
-
-            instance->SetBossState(DATA_ONYXIA, IN_PROGRESS);
             instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMED_START_EVENT);
         }
 
@@ -226,11 +228,11 @@ public:
                         me->SetCanFly(false);
                         me->SetDisableGravity(false);
                         me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
-                        if (Creature* trigger = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_TRIGGER_GUID)))
+                        if (Creature* trigger = ObjectAccessor::GetCreature(*me, triggerGUID))
                             me->Kill(trigger);
                         me->SetReactState(REACT_AGGRESSIVE);
                         // tank selection based on phase one. If tank is not there i take nearest one
-                        if (Unit* tank = ObjectAccessor::GetUnit(*me, instance->GetData64(DATA_TANK_GUID)))
+                        if (Unit* tank = ObjectAccessor::GetUnit(*me, tankGUID))
                             me->GetMotionMaster()->MoveChase(tank);
                         else if (Unit* newtarget = SelectTarget(SELECT_TARGET_NEAREST, 0))
                             me->GetMotionMaster()->MoveChase(newtarget);
@@ -246,7 +248,7 @@ public:
                         me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
                         me->SetFacingTo(me->GetOrientation() + float(M_PI));
                         if (Creature * trigger = me->SummonCreature(NPC_TRIGGER, MiddleRoomLocation, TEMPSUMMON_CORPSE_DESPAWN))
-                            instance->SetData64(DATA_TRIGGER_GUID, trigger->GetGUID());
+                            triggerGUID = trigger->GetGUID();
                         me->GetMotionMaster()->MoveTakeoff(11, Phase2Floating);
                         me->SetSpeed(MOVE_FLIGHT, 1.0f);
                         Talk(SAY_PHASE_2_TRANS);
@@ -327,9 +329,10 @@ public:
                 {
                     if (HealthBelowPct(65))
                     {
+                        if (Unit* target = me->GetVictim())
+                            tankGUID = target->GetGUID();
                         SetCombatMovement(false);
                         Phase = PHASE_BREATH;
-                        instance->SetData64(DATA_TANK_GUID, me->GetVictim()->GetGUID());
                         me->SetReactState(REACT_PASSIVE);
                         me->AttackStop();
                         me->GetMotionMaster()->MovePoint(10, Phase2Location);
@@ -352,7 +355,7 @@ public:
                             Trinity::GameObjectLastSearcher<Trinity::GameObjectInRangeCheck> searcher(me, Floor, check);
                             me->VisitNearbyGridObject(30, searcher);
                             if (Floor)
-                                instance->SetData64(DATA_FLOOR_ERUPTION_GUID, Floor->GetGUID());
+                                instance->SetGuidData(DATA_FLOOR_ERUPTION_GUID, Floor->GetGUID());
                             events.ScheduleEvent(EVENT_BELLOWING_ROAR, 30000);
                             break;
                         }
@@ -394,7 +397,7 @@ public:
                 }
 
                 if (!me->isMoving())
-                    if (Creature* trigger = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_TRIGGER_GUID)))
+                    if (Creature* trigger = ObjectAccessor::GetCreature(*me, triggerGUID))
                         me->SetFacingToObject(trigger);
 
                 events.Update(diff);
@@ -470,6 +473,8 @@ public:
             uint8 Phase;
             uint8 MovePoint;
             uint8 SummonWhelpCount;
+            ObjectGuid triggerGUID;
+            ObjectGuid tankGUID;
             bool IsMoving;
     };
 

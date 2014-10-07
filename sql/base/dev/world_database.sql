@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.6.9-rc, for Win64 (x86_64)
+-- MySQL dump 10.15  Distrib 10.0.13-MariaDB, for Win64 (x86)
 --
 -- Host: localhost    Database: world
 -- ------------------------------------------------------
--- Server version	5.6.9-rc
+-- Server version	10.0.13-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -620,31 +620,10 @@ CREATE TABLE `creature_text` (
   `emote` mediumint(8) unsigned NOT NULL DEFAULT '0',
   `duration` mediumint(8) unsigned NOT NULL DEFAULT '0',
   `sound` mediumint(8) unsigned NOT NULL DEFAULT '0',
+  `BroadcastTextId` mediumint(6) NOT NULL DEFAULT '0',
+  `TextRange` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `comment` varchar(255) DEFAULT '',
-  `BroadcastTextID` mediumint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`entry`,`groupid`,`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `db_script_string`
---
-
-DROP TABLE IF EXISTS `db_script_string`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `db_script_string` (
-  `entry` int(10) unsigned NOT NULL DEFAULT '0',
-  `content_default` text NOT NULL,
-  `content_loc1` text,
-  `content_loc2` text,
-  `content_loc3` text,
-  `content_loc4` text,
-  `content_loc5` text,
-  `content_loc6` text,
-  `content_loc7` text,
-  `content_loc8` text,
-  PRIMARY KEY (`entry`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1005,7 +984,7 @@ CREATE TABLE `game_tele` (
   `map` smallint(5) unsigned NOT NULL DEFAULT '0',
   `name` varchar(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=1424 DEFAULT CHARSET=utf8 COMMENT='Tele Command';
+) ENGINE=MyISAM AUTO_INCREMENT=1425 DEFAULT CHARSET=utf8 COMMENT='Tele Command';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3151,6 +3130,9 @@ CREATE TABLE `spell_dbc` (
   `EffectMultipleValue1` float NOT NULL DEFAULT '0',
   `EffectMultipleValue2` float NOT NULL DEFAULT '0',
   `EffectMultipleValue3` float NOT NULL DEFAULT '0',
+  `EffectItemType1` int(10) unsigned NOT NULL DEFAULT '0',
+  `EffectItemType2` int(10) unsigned NOT NULL DEFAULT '0',
+  `EffectItemType3` int(10) unsigned NOT NULL DEFAULT '0',
   `EffectMiscValue1` int(11) NOT NULL DEFAULT '0',
   `EffectMiscValue2` int(11) NOT NULL DEFAULT '0',
   `EffectMiscValue3` int(11) NOT NULL DEFAULT '0',
@@ -3642,10 +3624,6 @@ CREATE TABLE `waypoints` (
   PRIMARY KEY (`entry`,`pointid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Creature waypoints';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping routines for database 'world'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -3656,4 +3634,4 @@ CREATE TABLE `waypoints` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-08-27 14:06:19
+-- Dump completed on 2014-09-21 17:08:37
