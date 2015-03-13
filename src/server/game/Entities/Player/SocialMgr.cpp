@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -294,7 +294,7 @@ void SocialMgr::BroadcastToFriendListers(Player* player, WorldPacket* packet)
         if (itr2 != itr->second.m_playerSocialMap.end() && (itr2->second.Flags & SOCIAL_FLAG_FRIEND))
         {
             Player* target = ObjectAccessor::FindPlayer(ObjectGuid(HIGHGUID_PLAYER, 0, itr->first));
-            if (!target || !target->IsInWorld())
+            if (!target)
                 continue;
 
             WorldSession* session = target->GetSession();

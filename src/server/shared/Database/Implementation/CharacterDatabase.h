@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -128,7 +128,6 @@ enum CharacterDatabaseStatements
     CHAR_SEL_AUCTION_ITEMS,
     CHAR_INS_AUCTION,
     CHAR_DEL_AUCTION,
-    CHAR_SEL_AUCTION_BY_TIME,
     CHAR_UPD_AUCTION_BID,
     CHAR_SEL_AUCTIONS,
     CHAR_INS_MAIL,
@@ -535,6 +534,12 @@ enum CharacterDatabaseStatements
     CHAR_SEL_PVPSTATS_MAXID,
     CHAR_INS_PVPSTATS_BATTLEGROUND,
     CHAR_INS_PVPSTATS_PLAYER,
+    CHAR_SEL_PVPSTATS_FACTIONS_OVERALL,
+
+    CHAR_INS_QUEST_TRACK,
+    CHAR_UPD_QUEST_TRACK_GM_COMPLETE,
+    CHAR_UPD_QUEST_TRACK_COMPLETE_TIME,
+    CHAR_UPD_QUEST_TRACK_ABANDON_TIME,
 
     MAX_CHARACTERDATABASE_STATEMENTS
 };

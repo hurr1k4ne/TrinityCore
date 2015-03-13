@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -60,8 +60,8 @@ void LFGPlayerScript::OnLogin(Player* player, bool /*loginFirst*/)
         ObjectGuid gguid2 = group->GetGUID();
         if (gguid != gguid2)
         {
-            TC_LOG_ERROR("lfg", "%s on group %u but LFG has group %u saved... Fixing.",
-                player->GetSession()->GetPlayerInfo().c_str(), gguid2.GetCounter(), gguid.GetCounter());
+            TC_LOG_ERROR("lfg", "%s on group %s but LFG has group %s saved... Fixing.",
+                player->GetSession()->GetPlayerInfo().c_str(), gguid2.ToString().c_str(), gguid.ToString().c_str());
             sLFGMgr->SetupGroupMember(guid, group->GetGUID());
         }
     }
@@ -184,7 +184,7 @@ void LFGGroupScript::OnRemoveMember(Group* group, ObjectGuid guid, RemoveMethod 
     }
 
     if (isLFG && state != LFG_STATE_FINISHED_DUNGEON) // Need more players to finish the dungeon
-        if (Player* leader = ObjectAccessor::FindPlayer(sLFGMgr->GetLeader(gguid)))
+        if (Player* leader = ObjectAccessor::FindConnectedPlayer(sLFGMgr->GetLeader(gguid)))
             leader->GetSession()->SendLfgOfferContinue(sLFGMgr->GetDungeon(gguid, false));
 }
 

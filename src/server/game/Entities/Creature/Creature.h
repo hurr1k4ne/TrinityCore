@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -671,8 +671,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 
         float m_SightDistance, m_CombatDistance;
 
-        void FarTeleportTo(Map* map, float X, float Y, float Z, float O);
-
         bool m_isTempWorldObject; //true when possessed
 
         // Handling caster facing during spellcast
@@ -733,6 +731,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 
     private:
         void ForcedDespawn(uint32 timeMSToDespawn = 0);
+        bool CheckNoGrayAggroConfig(uint32 playerLevel, uint32 creatureLevel) const; // No aggro from gray creatures
 
         //WaypointMovementGenerator vars
         uint32 m_waypointID;

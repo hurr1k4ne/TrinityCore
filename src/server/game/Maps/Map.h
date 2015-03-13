@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ class GridMap
 public:
     GridMap();
     ~GridMap();
-    bool loadData(char* filaname);
+    bool loadData(const char* filename);
     void unloadData();
 
     uint16 getArea(float x, float y) const;
