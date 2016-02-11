@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -165,23 +165,13 @@ public:
 
         void Reset() override
         {
-            ryga = NULL;
         }
 
         // Override Evade Mode event, recast buff that was removed by standard handler
-        void EnterEvadeMode() override
+        void EnterEvadeMode(EvadeReason why) override
         {
-            npc_escortAI::EnterEvadeMode();
+            npc_escortAI::EnterEvadeMode(why);
             DoCast(me, SPELL_ANCESTRAL_WOLF_BUFF, true);
-        }
-
-        void MoveInLineOfSight(Unit* who) override
-        {
-            if (!ryga && who->GetEntry() == NPC_RYGA && me->IsWithinDistInMap(who, 15.0f))
-                if (Creature* temp = who->ToCreature())
-                    ryga = temp;
-
-            npc_escortAI::MoveInLineOfSight(who);
         }
 
         void WaypointReached(uint32 waypointId) override
@@ -238,9 +228,6 @@ public:
                     break;
             }
         }
-
-    private:
-        Creature* ryga;
     };
 
     CreatureAI* GetAI(Creature* creature) const override
@@ -496,7 +483,7 @@ class npc_barada : public CreatureScript
 {
 public:
     npc_barada() : CreatureScript("npc_barada") { }
-       
+
     struct npc_baradaAI : public ScriptedAI
     {
         npc_baradaAI(Creature* creature) : ScriptedAI(creature)
@@ -792,7 +779,7 @@ public:
 
                     me->SetCanFly(true);
                     me->SetSpeed(MOVE_RUN, 0.2f);
-                    
+
                     me->SetFacingTo(3.207566f);
                     me->GetMotionMaster()->MoveJump(exorcismPos[2], 2.0f, 2.0f);
 
@@ -873,14 +860,14 @@ public:
                 }
             }
         }
-        
+
         private:
             EventMap events;
             SummonList summons;
-            
+
             uint8 circleRounds;
             uint8 point;
-            
+
             bool wpreached;
     };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ npc_snake_trap_serpents  80%    AI for snakes that summoned by Snake Trap
 npc_shadowfiend         100%   restore 5% of owner's mana when shadowfiend die from damage
 npc_locksmith            75%    list of keys needs to be confirmed
 npc_firework            100%    NPC's summoned by rockets and rocket clusters, for making them cast visual
+npc_train_wrecker       100%    Wind-Up Train Wrecker that kills train set
 EndContentData */
 
 #include "ScriptMgr.h"
@@ -56,7 +57,9 @@ EndContentData */
 #include "SpellHistory.h"
 #include "SpellAuras.h"
 #include "Pet.h"
+#include "PetAI.h"
 #include "CreatureTextMgr.h"
+#include "SmartAI.h"
 
 /*########
 # npc_air_force_bots
@@ -518,6 +521,67 @@ public:
 };
 
 /*######
+## npc_torch_tossing_target_bunny_controller
+######*/
+
+enum TorchTossingTarget
+{
+    NPC_TORCH_TOSSING_TARGET_BUNNY      = 25535,
+    SPELL_TARGET_INDICATOR              = 45723
+};
+
+class npc_torch_tossing_target_bunny_controller : public CreatureScript
+{
+public:
+    npc_torch_tossing_target_bunny_controller() : CreatureScript("npc_torch_tossing_target_bunny_controller") { }
+
+    struct npc_torch_tossing_target_bunny_controllerAI : public ScriptedAI
+    {
+        npc_torch_tossing_target_bunny_controllerAI(Creature* creature) : ScriptedAI(creature)
+        {
+            _targetTimer = 3000;
+        }
+
+        ObjectGuid DoSearchForTargets(ObjectGuid lastTargetGUID)
+        {
+            std::list<Creature*> targets;
+            me->GetCreatureListWithEntryInGrid(targets, NPC_TORCH_TOSSING_TARGET_BUNNY, 60.0f);
+            targets.remove_if([lastTargetGUID](Creature* creature) { return creature->GetGUID() == lastTargetGUID; });
+
+            if (!targets.empty())
+            {
+                _lastTargetGUID = Trinity::Containers::SelectRandomContainerElement(targets)->GetGUID();
+
+                return _lastTargetGUID;
+            }
+            return ObjectGuid::Empty;
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            if (_targetTimer < diff)
+            {
+                if (Unit* target = ObjectAccessor::GetUnit(*me, DoSearchForTargets(_lastTargetGUID)))
+                    target->CastSpell(target, SPELL_TARGET_INDICATOR, true);
+
+                _targetTimer = 3000;
+            }
+            else
+                _targetTimer -= diff;
+        }
+
+    private:
+        uint32 _targetTimer;
+        ObjectGuid _lastTargetGUID;
+    };
+
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return new npc_torch_tossing_target_bunny_controllerAI(creature);
+    }
+};
+
+/*######
 ## Triage quest
 ######*/
 
@@ -942,6 +1006,28 @@ public:
     {
         npc_garments_of_questsAI(Creature* creature) : npc_escortAI(creature)
         {
+            switch (me->GetEntry())
+            {
+                case ENTRY_SHAYA:
+                    quest = QUEST_MOON;
+                    break;
+                case ENTRY_ROBERTS:
+                    quest = QUEST_LIGHT_1;
+                    break;
+                case ENTRY_DOLF:
+                    quest = QUEST_LIGHT_2;
+                    break;
+                case ENTRY_KORJA:
+                    quest = QUEST_SPIRIT;
+                    break;
+                case ENTRY_DG_KEL:
+                    quest = QUEST_DARKNESS;
+                    break;
+                default:
+                    quest = 0;
+                    break;
+            }
+
             Reset();
         }
 
@@ -951,6 +1037,7 @@ public:
         bool CanRun;
 
         uint32 RunAwayTimer;
+        uint32 quest;
 
         void Reset() override
         {
@@ -982,93 +1069,20 @@ public:
 
                 if (Player* player = caster->ToPlayer())
                 {
-                    switch (me->GetEntry())
+                    if (quest && player->GetQuestStatus(quest) == QUEST_STATUS_INCOMPLETE)
                     {
-                        case ENTRY_SHAYA:
-                            if (player->GetQuestStatus(QUEST_MOON) == QUEST_STATUS_INCOMPLETE)
-                            {
-                                if (IsHealed && !CanRun && spell->Id == SPELL_FORTITUDE_R1)
-                                {
-                                    Talk(SAY_THANKS, caster);
-                                    CanRun = true;
-                                }
-                                else if (!IsHealed && spell->Id == SPELL_LESSER_HEAL_R2)
-                                {
-                                    CasterGUID = caster->GetGUID();
-                                    me->SetStandState(UNIT_STAND_STATE_STAND);
-                                    Talk(SAY_HEALED, caster);
-                                    IsHealed = true;
-                                }
-                            }
-                            break;
-                        case ENTRY_ROBERTS:
-                            if (player->GetQuestStatus(QUEST_LIGHT_1) == QUEST_STATUS_INCOMPLETE)
-                            {
-                                if (IsHealed && !CanRun && spell->Id == SPELL_FORTITUDE_R1)
-                                {
-                                    Talk(SAY_THANKS, caster);
-                                    CanRun = true;
-                                }
-                                else if (!IsHealed && spell->Id == SPELL_LESSER_HEAL_R2)
-                                {
-                                    CasterGUID = caster->GetGUID();
-                                    me->SetStandState(UNIT_STAND_STATE_STAND);
-                                    Talk(SAY_HEALED, caster);
-                                    IsHealed = true;
-                                }
-                            }
-                            break;
-                        case ENTRY_DOLF:
-                            if (player->GetQuestStatus(QUEST_LIGHT_2) == QUEST_STATUS_INCOMPLETE)
-                            {
-                                if (IsHealed && !CanRun && spell->Id == SPELL_FORTITUDE_R1)
-                                {
-                                    Talk(SAY_THANKS, caster);
-                                    CanRun = true;
-                                }
-                                else if (!IsHealed && spell->Id == SPELL_LESSER_HEAL_R2)
-                                {
-                                    CasterGUID = caster->GetGUID();
-                                    me->SetStandState(UNIT_STAND_STATE_STAND);
-                                    Talk(SAY_HEALED, caster);
-                                    IsHealed = true;
-                                }
-                            }
-                            break;
-                        case ENTRY_KORJA:
-                            if (player->GetQuestStatus(QUEST_SPIRIT) == QUEST_STATUS_INCOMPLETE)
-                            {
-                                if (IsHealed && !CanRun && spell->Id == SPELL_FORTITUDE_R1)
-                                {
-                                    Talk(SAY_THANKS, caster);
-                                    CanRun = true;
-                                }
-                                else if (!IsHealed && spell->Id == SPELL_LESSER_HEAL_R2)
-                                {
-                                    CasterGUID = caster->GetGUID();
-                                    me->SetStandState(UNIT_STAND_STATE_STAND);
-                                    Talk(SAY_HEALED, caster);
-                                    IsHealed = true;
-                                }
-                            }
-                            break;
-                        case ENTRY_DG_KEL:
-                            if (player->GetQuestStatus(QUEST_DARKNESS) == QUEST_STATUS_INCOMPLETE)
-                            {
-                                if (IsHealed && !CanRun && spell->Id == SPELL_FORTITUDE_R1)
-                                {
-                                    Talk(SAY_THANKS, caster);
-                                    CanRun = true;
-                                }
-                                else if (!IsHealed && spell->Id == SPELL_LESSER_HEAL_R2)
-                                {
-                                    CasterGUID = caster->GetGUID();
-                                    me->SetStandState(UNIT_STAND_STATE_STAND);
-                                    Talk(SAY_HEALED, caster);
-                                    IsHealed = true;
-                                }
-                            }
-                            break;
+                        if (IsHealed && !CanRun && spell->Id == SPELL_FORTITUDE_R1)
+                        {
+                            Talk(SAY_THANKS, caster);
+                            CanRun = true;
+                        }
+                        else if (!IsHealed && spell->Id == SPELL_LESSER_HEAL_R2)
+                        {
+                            CasterGUID = caster->GetGUID();
+                            me->SetStandState(UNIT_STAND_STATE_STAND);
+                            Talk(SAY_HEALED, caster);
+                            IsHealed = true;
+                        }
                     }
 
                     // give quest credit, not expect any special quest objectives
@@ -1471,7 +1485,6 @@ public:
         void Reset() override
         {
             me->SetControlled(true, UNIT_STATE_STUNNED);//disable rotate
-            me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);//imune to knock aways like blast wave
 
             _events.Reset();
             _damageTimes.clear();
@@ -1481,9 +1494,9 @@ public:
                 _events.ScheduleEvent(EVENT_TD_DESPAWN, 15000);
         }
 
-        void EnterEvadeMode() override
+        void EnterEvadeMode(EvadeReason why) override
         {
-            if (!_EnterEvadeMode())
+            if (!_EnterEvadeMode(why))
                 return;
 
             Reset();
@@ -2371,12 +2384,354 @@ public:
     }
 };
 
+enum StableMasters
+{
+    SPELL_MINIWING                  = 54573,
+    SPELL_JUBLING                   = 54611,
+    SPELL_DARTER                    = 54619,
+    SPELL_WORG                      = 54631,
+    SPELL_SMOLDERWEB                = 54634,
+    SPELL_CHIKEN                    = 54677,
+    SPELL_WOLPERTINGER              = 54688,
+
+    STABLE_MASTER_GOSSIP_SUB_MENU   = 9820
+};
+
+class npc_stable_master : public CreatureScript
+{
+    public:
+        npc_stable_master() : CreatureScript("npc_stable_master") { }
+
+        struct npc_stable_masterAI : public SmartAI
+        {
+            npc_stable_masterAI(Creature* creature) : SmartAI(creature) { }
+
+            void sGossipSelect(Player* player, uint32 menuId, uint32 gossipListId) override
+            {
+                SmartAI::sGossipSelect(player, menuId, gossipListId);
+                if (menuId != STABLE_MASTER_GOSSIP_SUB_MENU)
+                    return;
+
+                switch (gossipListId)
+                {
+                    case 0:
+                        player->CastSpell(player, SPELL_MINIWING, false);
+                        break;
+                    case 1:
+                        player->CastSpell(player, SPELL_JUBLING, false);
+                        break;
+                    case 2:
+                        player->CastSpell(player, SPELL_DARTER, false);
+                        break;
+                    case 3:
+                        player->CastSpell(player, SPELL_WORG, false);
+                        break;
+                    case 4:
+                        player->CastSpell(player, SPELL_SMOLDERWEB, false);
+                        break;
+                    case 5:
+                        player->CastSpell(player, SPELL_CHIKEN, false);
+                        break;
+                    case 6:
+                        player->CastSpell(player, SPELL_WOLPERTINGER, false);
+                        break;
+                    default:
+                        return;
+                }
+
+                player->PlayerTalkClass->SendCloseGossip();
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return new npc_stable_masterAI(creature);
+        }
+};
+
+enum TrainWrecker
+{
+    GO_TOY_TRAIN          = 193963,
+    SPELL_TOY_TRAIN_PULSE =  61551,
+    SPELL_WRECK_TRAIN     =  62943,
+    ACTION_WRECKED        =      1,
+    EVENT_DO_JUMP         =      1,
+    EVENT_DO_FACING       =      2,
+    EVENT_DO_WRECK        =      3,
+    EVENT_DO_DANCE        =      4,
+    MOVEID_CHASE          =      1,
+    MOVEID_JUMP           =      2
+};
+class npc_train_wrecker : public CreatureScript
+{
+    public:
+        npc_train_wrecker() : CreatureScript("npc_train_wrecker") { }
+
+        struct npc_train_wreckerAI : public NullCreatureAI
+        {
+            npc_train_wreckerAI(Creature* creature) : NullCreatureAI(creature), _isSearching(true), _nextAction(0), _timer(1 * IN_MILLISECONDS) { }
+
+            GameObject* VerifyTarget() const
+            {
+                if (GameObject* target = ObjectAccessor::GetGameObject(*me, _target))
+                    return target;
+                me->HandleEmoteCommand(EMOTE_ONESHOT_RUDE);
+                me->DespawnOrUnsummon(3 * IN_MILLISECONDS);
+                return nullptr;
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (_isSearching)
+                {
+                    if (diff < _timer)
+                        _timer -= diff;
+                    else
+                    {
+                        if (GameObject* target = me->FindNearestGameObject(GO_TOY_TRAIN, 15.0f))
+                        {
+                            _isSearching = false;
+                            _target = target->GetGUID();
+                            me->SetWalk(true);
+                            me->GetMotionMaster()->MovePoint(MOVEID_CHASE, target->GetNearPosition(3.0f, target->GetAngle(me)));
+                        }
+                        else
+                            _timer = 3 * IN_MILLISECONDS;
+                    }
+                }
+                else
+                {
+                    switch (_nextAction)
+                    {
+                        case EVENT_DO_JUMP:
+                            if (GameObject* target = VerifyTarget())
+                                me->GetMotionMaster()->MoveJump(*target, 5.0, 10.0, MOVEID_JUMP);
+                            _nextAction = 0;
+                            break;
+                        case EVENT_DO_FACING:
+                            if (GameObject* target = VerifyTarget())
+                            {
+                                me->SetFacingTo(target->GetOrientation());
+                                me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                                _timer = 1.5 * IN_MILLISECONDS;
+                                _nextAction = EVENT_DO_WRECK;
+                            }
+                            else
+                                _nextAction = 0;
+                            break;
+                        case EVENT_DO_WRECK:
+                            if (diff < _timer)
+                            {
+                                _timer -= diff;
+                                break;
+                            }
+                            if (GameObject* target = VerifyTarget())
+                            {
+                                me->CastSpell(target, SPELL_WRECK_TRAIN, false);
+                                target->AI()->DoAction(ACTION_WRECKED);
+                                _timer = 2 * IN_MILLISECONDS;
+                                _nextAction = EVENT_DO_DANCE;
+                            }
+                            else
+                                _nextAction = 0;
+                            break;
+                        case EVENT_DO_DANCE:
+                            if (diff < _timer)
+                            {
+                                _timer -= diff;
+                                break;
+                            }
+                            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_DANCE);
+                            me->DespawnOrUnsummon(5 * IN_MILLISECONDS);
+                            _nextAction = 0;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            void MovementInform(uint32 /*type*/, uint32 id) override
+            {
+                if (id == MOVEID_CHASE)
+                    _nextAction = EVENT_DO_JUMP;
+                else if (id == MOVEID_JUMP)
+                    _nextAction = EVENT_DO_FACING;
+            }
+
+        private:
+            bool _isSearching;
+            uint8 _nextAction;
+            uint32 _timer;
+            ObjectGuid _target;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return new npc_train_wreckerAI(creature);
+        }
+};
+
+enum EgbertMisc
+{
+    EVENT_MOVE_POS = 1,
+    EVENT_RETURN = 2
+};
+
+class npc_egbert : public CreatureScript
+{
+public:
+    npc_egbert() : CreatureScript("npc_egbert") {}
+
+    struct npc_egbertAI : public PetAI
+    {
+        npc_egbertAI(Creature* creature) : PetAI(creature)
+        {
+            if (Unit* owner = me->GetCharmerOrOwner())
+                if (owner->GetMap()->GetEntry()->addon > 1)
+                    me->SetCanFly(true);
+        }
+
+        void Reset() override
+        {
+            _events.Reset();
+            _events.ScheduleEvent(EVENT_MOVE_POS, urandms(1, 20));
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            _events.Update(diff);
+
+            while (uint32 eventId = _events.ExecuteEvent())
+            {
+                switch (eventId)
+                {
+                case EVENT_MOVE_POS:
+                    if (Unit* owner = me->GetCharmerOrOwner())
+                    {
+                        me->GetMotionMaster()->Clear();
+                        me->GetMotionMaster()->MovePoint(0, owner->GetPositionX() + frand(-30.0f, 30.0f), owner->GetPositionY() + frand(-30.0f, 30.0f), owner->GetPositionZ());
+                    }
+                    _events.ScheduleEvent(EVENT_RETURN, urandms(3, 4));
+                    break;
+                case EVENT_RETURN:
+                    if (Unit* owner = me->GetCharmerOrOwner())
+                        me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle());
+                    _events.ScheduleEvent(EVENT_MOVE_POS, urandms(1, 20));
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    private:
+        EventMap _events;
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_egbertAI(creature);
+    }
+};
+
+enum PandarenMonkMisc
+{
+    SPELL_PANDAREN_MONK = 69800,
+    EVENT_FOCUS = 1,
+    EVENT_EMOTE = 2,
+    EVENT_FOLLOW = 3,
+    EVENT_DRINK = 4
+};
+
+class npc_pandaren_monk : public CreatureScript
+{
+public:
+    npc_pandaren_monk() : CreatureScript("npc_pandaren_monk") {}
+
+    struct npc_pandaren_monkAI : public NullCreatureAI
+    {
+        npc_pandaren_monkAI(Creature* creature) : NullCreatureAI(creature) { }
+
+        void Reset() override
+        {
+            _events.Reset();
+            _events.ScheduleEvent(EVENT_FOCUS, 1000);
+        }
+
+        void EnterEvadeMode(EvadeReason why) override
+        {
+            if (!_EnterEvadeMode(why))
+                return;
+
+            Reset();
+        }
+
+        void ReceiveEmote(Player* /*player*/, uint32 emote) override
+        {
+            me->InterruptSpell(CURRENT_CHANNELED_SPELL);
+            me->StopMoving();
+
+            switch (emote)
+            {
+                case TEXT_EMOTE_BOW:
+                    _events.ScheduleEvent(EVENT_FOCUS, 1000);
+                    break;
+                case TEXT_EMOTE_DRINK:
+                    _events.ScheduleEvent(EVENT_DRINK, 1000);
+                    break;
+            }
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            _events.Update(diff);
+
+            if (Unit* owner = me->GetCharmerOrOwner())
+                if (!me->IsWithinDist(owner, 30.f))
+                    me->InterruptSpell(CURRENT_CHANNELED_SPELL);
+
+            while (uint32 eventId = _events.ExecuteEvent())
+            {
+                switch (eventId)
+                {
+                    case EVENT_FOCUS:
+                        if (Unit* owner = me->GetCharmerOrOwner())
+                            me->SetFacingToObject(owner);
+                        _events.ScheduleEvent(EVENT_EMOTE, 1000);
+                        break;
+                    case EVENT_EMOTE:
+                        me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                        _events.ScheduleEvent(EVENT_FOLLOW, 1000);
+                        break;
+                    case EVENT_FOLLOW:
+                        if (Unit* owner = me->GetCharmerOrOwner())
+                            me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
+                        break;
+                    case EVENT_DRINK:
+                        me->CastSpell(me, SPELL_PANDAREN_MONK, false);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    private:
+        EventMap _events;
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_pandaren_monkAI(creature);
+    }
+};
+
 void AddSC_npcs_special()
 {
     new npc_air_force_bots();
     new npc_lunaclaw_spirit();
     new npc_chicken_cluck();
     new npc_dancing_flames();
+    new npc_torch_tossing_target_bunny_controller();
     new npc_doctor();
     new npc_injured_patient();
     new npc_garments_of_quests();
@@ -2393,4 +2748,8 @@ void AddSC_npcs_special()
     new npc_firework();
     new npc_spring_rabbit();
     new npc_imp_in_a_ball();
+    new npc_stable_master();
+    new npc_train_wrecker();
+    new npc_egbert();
+    new npc_pandaren_monk();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -127,18 +127,18 @@ class boss_warchief_kargath_bladefist : public CreatureScript
                 Talk(SAY_AGGRO);
             }
 
-            void JustSummoned(Creature* summoned) override
+            void JustSummoned(Creature* summon) override
             {
-                switch (summoned->GetEntry())
+                switch (summon->GetEntry())
                 {
                     case NPC_HEARTHEN_GUARD:
                     case NPC_SHARPSHOOTER_GUARD:
                     case NPC_REAVER_GUARD:
-                        summoned->AI()->AttackStart(SelectTarget(SELECT_TARGET_RANDOM, 0));
-                        adds.push_back(summoned->GetGUID());
+                        summon->AI()->AttackStart(SelectTarget(SELECT_TARGET_RANDOM, 0));
+                        adds.push_back(summon->GetGUID());
                         break;
                     case NPC_SHATTERED_ASSASSIN:
-                        assassins.push_back(summoned->GetGUID());
+                        assassins.push_back(summon->GetGUID());
                         break;
                 }
             }

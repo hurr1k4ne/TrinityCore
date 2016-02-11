@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -91,9 +91,9 @@ public:
             Initialize();
         }
 
-        void EnterEvadeMode() override
+        void EnterEvadeMode(EvadeReason why) override
         {
-            ScriptedAI::EnterEvadeMode();
+            ScriptedAI::EnterEvadeMode(why);
             ResetTimer = 2000;
         }
 
@@ -108,7 +108,7 @@ public:
         {
             Talk(SAY_DEATH);
             if (Unit* midnight = ObjectAccessor::GetUnit(*me, Midnight))
-                midnight->Kill(midnight);
+                midnight->KillSelf();
         }
 
         void UpdateAI(uint32 diff) override;
@@ -264,7 +264,7 @@ void boss_attumen::boss_attumenAI::UpdateAI(uint32 diff)
             }
             Midnight.Clear();
             me->SetVisible(false);
-            me->Kill(me);
+            me->KillSelf();
         } else ResetTimer -= diff;
     }
 
