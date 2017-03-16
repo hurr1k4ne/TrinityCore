@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -20,7 +20,7 @@
 
 #include "Position.h"
 
-class AreaBoundary
+class TC_GAME_API AreaBoundary
 {
     public:
         enum BoundaryType
@@ -34,16 +34,17 @@ class AreaBoundary
         };
         virtual ~AreaBoundary() { }
         BoundaryType GetBoundaryType() const { return m_boundaryType; }
-        bool IsWithinBoundary(const Position* pos) const { return (IsWithinBoundaryArea(pos) != m_isInvertedBoundary); }
+        bool IsWithinBoundary(Position const* pos) const { return (IsWithinBoundaryArea(pos) != m_isInvertedBoundary); }
+        bool IsWithinBoundary(Position const& pos) const { return IsWithinBoundary(&pos); }
 
         struct DoublePosition : Position
         {
             double d_positionX, d_positionY, d_positionZ;
             DoublePosition(double x = 0.0, double y = 0.0, double z = 0.0, float o = 0.0f)
-                : Position(x, y, z, o), d_positionX(x), d_positionY(y), d_positionZ(z) { }
+                : Position(float(x), float(y), float(z), o), d_positionX(x), d_positionY(y), d_positionZ(z) { }
             DoublePosition(float x, float y = 0.0f, float z = 0.0f, float o = 0.0f)
                 : Position(x, y, z, o), d_positionX(x), d_positionY(y), d_positionZ(z) { }
-            DoublePosition(const Position& pos)
+            DoublePosition(Position const & pos)
                 : DoublePosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation()) { }
 
             double GetDoublePositionX() const { return d_positionX; }
@@ -61,25 +62,25 @@ class AreaBoundary
 
     protected:
         AreaBoundary(BoundaryType bType, bool isInverted) : m_boundaryType(bType), m_isInvertedBoundary(isInverted) { }
-        virtual bool IsWithinBoundaryArea(const Position* pos) const = 0;
+        virtual bool IsWithinBoundaryArea(Position const* pos) const = 0;
         const BoundaryType m_boundaryType;
         bool m_isInvertedBoundary;
 };
 
-class RectangleBoundary : public AreaBoundary
+class TC_GAME_API RectangleBoundary : public AreaBoundary
 {
     public:
         // X axis is north/south, Y axis is east/west, larger values are northwest
         RectangleBoundary(float southX, float northX, float eastY, float westY, bool isInverted = false);
 
     protected:
-        bool IsWithinBoundaryArea(const Position* pos) const override;
+        bool IsWithinBoundaryArea(Position const* pos) const override;
 
     private:
         const float _minX, _maxX, _minY, _maxY;
 };
 
-class CircleBoundary : public AreaBoundary
+class TC_GAME_API CircleBoundary : public AreaBoundary
 {
     public:
         CircleBoundary(Position const& center, double radius, bool isInverted = false);
@@ -88,42 +89,42 @@ class CircleBoundary : public AreaBoundary
         CircleBoundary(DoublePosition const& center, DoublePosition const& pointOnCircle, bool isInverted = false);
 
     protected:
-        bool IsWithinBoundaryArea(const Position* pos) const override;
+        bool IsWithinBoundaryArea(Position const* pos) const override;
 
     private:
         const DoublePosition _center;
         const double _radiusSq;
 };
 
-class EllipseBoundary : public AreaBoundary
+class TC_GAME_API EllipseBoundary : public AreaBoundary
 {
     public:
         EllipseBoundary(Position const& center, double radiusX, double radiusY, bool isInverted = false);
         EllipseBoundary(DoublePosition const& center, double radiusX, double radiusY, bool isInverted = false);
 
     protected:
-        bool IsWithinBoundaryArea(const Position* pos) const override;
+        bool IsWithinBoundaryArea(Position const* pos) const override;
 
     private:
         const DoublePosition _center;
         const double _radiusYSq, _scaleXSq;
 };
 
-class TriangleBoundary : public AreaBoundary
+class TC_GAME_API TriangleBoundary : public AreaBoundary
 {
     public:
         TriangleBoundary(Position const& pointA, Position const& pointB, Position const& pointC, bool isInverted = false);
         TriangleBoundary(DoublePosition const& pointA, DoublePosition const& pointB, DoublePosition const& pointC, bool isInverted = false);
 
     protected:
-        bool IsWithinBoundaryArea(const Position* pos) const override;
+        bool IsWithinBoundaryArea(Position const* pos) const override;
 
     private:
         const DoublePosition _a, _b, _c;
         const double _abx, _bcx, _cax, _aby, _bcy, _cay;
 };
 
-class ParallelogramBoundary : public AreaBoundary
+class TC_GAME_API ParallelogramBoundary : public AreaBoundary
 {
     public:
         // Note: AB must be orthogonal to AD
@@ -131,20 +132,20 @@ class ParallelogramBoundary : public AreaBoundary
         ParallelogramBoundary(DoublePosition const& cornerA, DoublePosition const& cornerB, DoublePosition const& cornerD, bool isInverted = false);
 
     protected:
-        bool IsWithinBoundaryArea(const Position* pos) const override;
+        bool IsWithinBoundaryArea(Position const* pos) const override;
 
     private:
         const DoublePosition _a, _b, _d, _c;
         const double _abx, _dax, _aby, _day;
 };
 
-class ZRangeBoundary : public AreaBoundary
+class TC_GAME_API ZRangeBoundary : public AreaBoundary
 {
     public:
         ZRangeBoundary(float minZ, float maxZ, bool isInverted = false);
 
     protected:
-        bool IsWithinBoundaryArea(const Position* pos) const override;
+        bool IsWithinBoundaryArea(Position const* pos) const override;
 
     private:
         const float _minZ, _maxZ;

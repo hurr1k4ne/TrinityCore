@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -21,9 +21,11 @@ endif()
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
+add_definitions(-DTRINITY_API_EXPORT_SHARED)
+
 add_library(shared
-  ${PRIVATE_SOURCES}
   ${PRIVATE_PCH_SOURCE}
+  ${PRIVATE_SOURCES}
 )
 
 CollectIncludeDirectories(
@@ -46,6 +48,18 @@ set_target_properties(shared
     PROPERTIES
       FOLDER
         "server")
+
+if( BUILD_SHARED_LIBS )
+  if( UNIX )
+    install(TARGETS shared
+      LIBRARY
+        DESTINATION lib)
+  elseif( WIN32 )
+    install(TARGETS shared
+      RUNTIME
+        DESTINATION "${CMAKE_INSTALL_PREFIX}")
+  endif()
+endif()
 
 # Generate precompiled header
 if (USE_COREPCH)

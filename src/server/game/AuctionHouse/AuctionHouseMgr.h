@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ enum AuctionHouses
     AUCTIONHOUSE_NEUTRAL        = 7
 };
 
-struct AuctionEntry
+struct TC_GAME_API AuctionEntry
 {
     uint32 Id;
     uint8 houseId;
@@ -101,7 +101,7 @@ struct AuctionEntry
 };
 
 //this class is used as auctionhouse instance
-class AuctionHouseObject
+class TC_GAME_API AuctionHouseObject
 {
   public:
     ~AuctionHouseObject()
@@ -146,7 +146,7 @@ class AuctionHouseObject
 
 };
 
-class AuctionHouseMgr
+class TC_GAME_API AuctionHouseMgr
 {
     private:
         AuctionHouseMgr();
@@ -191,7 +191,7 @@ class AuctionHouseMgr
 
         void AddAItem(Item* it);
         bool RemoveAItem(ObjectGuid::LowType id, bool deleteItem = false);
-        void PendingAuctionAdd(Player* player, AuctionEntry* aEntry);
+        bool PendingAuctionAdd(Player* player, AuctionEntry* aEntry, Item* item);
         uint32 PendingAuctionCount(const Player* player) const;
         void PendingAuctionProcess(Player* player);
         void UpdatePendingAuctions();

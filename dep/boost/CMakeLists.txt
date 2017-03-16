@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -26,28 +26,39 @@ if(WIN32)
   set(Boost_USE_STATIC_RUNTIME     OFF)
 endif()
 
-find_package(Boost 1.51 REQUIRED system filesystem thread program_options iostreams regex)
+include (CheckCXXSourceCompiles)
+
+check_cxx_source_compiles("
+  #include <regex>
+  int main() { std::wregex r(L\".*\"); }"
+  STD_HAS_WORKING_WREGEX)
+
+if (WIN32)
+  # On windows the requirements are higher according to the wiki.
+  set(BOOST_REQUIRED_VERSION 1.59)
+else()
+  set(BOOST_REQUIRED_VERSION 1.55)
+endif()
+
+if (STD_HAS_WORKING_WREGEX)
+  find_package(Boost ${BOOST_REQUIRED_VERSION} REQUIRED system filesystem thread program_options iostreams)
+else()
+  find_package(Boost ${BOOST_REQUIRED_VERSION} REQUIRED system filesystem thread program_options iostreams regex)
+endif()
 
 # Find if Boost was compiled in C++03 mode because it requires -DBOOST_NO_CXX11_SCOPED_ENUMS
-
-include (CheckCXXSourceCompiles)
 
 set(CMAKE_REQUIRED_INCLUDES ${Boost_INCLUDE_DIR})
 set(CMAKE_REQUIRED_LIBRARIES ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_IOSTREAMS_LIBRARY})
 set(CMAKE_REQUIRED_FLAGS "-std=c++11")
-unset(boost_filesystem_copy_links_without_NO_SCOPED_ENUM CACHE)
 check_cxx_source_compiles("
   #include <boost/filesystem/path.hpp>
   #include <boost/filesystem/operations.hpp>
   int main() { boost::filesystem::copy_file(boost::filesystem::path(), boost::filesystem::path()); }"
 boost_filesystem_copy_links_without_NO_SCOPED_ENUM)
-unset(CMAKE_REQUIRED_INCLUDES CACHE)
-unset(CMAKE_REQUIRED_LIBRARIES CACHE)
-unset(CMAKE_REQUIRED_FLAGS CACHE)
-
-if (NOT boost_filesystem_copy_links_without_NO_SCOPED_ENUM)
-  set(OPTIONAL_BOOST_NO_SCOPED_ENUMS -DBOOST_NO_CXX11_SCOPED_ENUMS)
-endif()
+unset(CMAKE_REQUIRED_INCLUDES)
+unset(CMAKE_REQUIRED_LIBRARIES)
+unset(CMAKE_REQUIRED_FLAGS)
 
 add_library(boost INTERFACE)
 
@@ -64,4 +75,18 @@ target_compile_definitions(boost
     -DBOOST_DATE_TIME_NO_LIB
     -DBOOST_REGEX_NO_LIB
     -DBOOST_CHRONO_NO_LIB
-    ${OPTIONAL_BOOST_NO_SCOPED_ENUMS})
+    # Due to MSVC linking error boost::none" already defined in scripts_...
+    # May be removed when the requirement is raised to boost 1.61 on windows.
+    -DBOOST_OPTIONAL_USE_OLD_DEFINITION_OF_NONE)
+
+if (NOT boost_filesystem_copy_links_without_NO_SCOPED_ENUM)
+  target_compile_definitions(boost
+    INTERFACE
+      -DBOOST_NO_CXX11_SCOPED_ENUMS)
+endif()
+
+if (NOT STD_HAS_WORKING_WREGEX)
+  target_compile_definitions(boost
+    INTERFACE
+      -DTC_HAS_BROKEN_WSTRING_REGEX)
+endif()

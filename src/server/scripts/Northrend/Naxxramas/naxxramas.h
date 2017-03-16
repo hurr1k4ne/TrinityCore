@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -43,20 +43,19 @@ enum Encounter
 
 enum Data
 {
-    DATA_HEIGAN_ERUPT,
     DATA_GOTHIK_GATE,
-    DATA_SAPPHIRON_BIRTH,
     DATA_HAD_ANUBREKHAN_GREET,
     DATA_HAD_FAERLINA_GREET,
     DATA_HAD_THADDIUS_GREET,
+    DATA_HAD_SAPPHIRON_BIRTH,
 
     DATA_HORSEMEN_CHECK_ACHIEVEMENT_CREDIT,
-    DATA_ABOMINATION_KILLED,
 
     DATA_NAXX_PORTAL_ARACHNID,
     DATA_NAXX_PORTAL_CONSTRUCT,
     DATA_NAXX_PORTAL_PLAGUE,
-    DATA_NAXX_PORTAL_MILITARY
+    DATA_NAXX_PORTAL_MILITARY,
+    DATA_KELTHUZAD_THRONE
 };
 
 enum Data64
@@ -69,10 +68,12 @@ enum Data64
     DATA_LADY,
     DATA_BARON,
     DATA_SIR,
+    DATA_GLUTH,
     DATA_THADDIUS,
     DATA_HEIGAN,
     DATA_FEUGEN,
     DATA_STALAGG,
+    DATA_SAPPHIRON,
     DATA_KELTHUZAD,
     DATA_KELTHUZAD_PORTAL01,
     DATA_KELTHUZAD_PORTAL02,
@@ -92,6 +93,7 @@ enum CreaturesIds
     NPC_LADY                    = 16065,
     NPC_BARON                   = 30549,
     NPC_SIR                     = 16063,
+    NPC_GLUTH                   = 15932,
     NPC_HEIGAN                  = 15936,
     NPC_THADDIUS                = 15928,
     NPC_FEUGEN                  = 15930,
@@ -105,7 +107,8 @@ enum CreaturesIds
     NPC_DK_UNDERSTUDY           = 16803,
     NPC_BIGGLESWORTH            = 16998,
     NPC_LICH_KING               = 16980,
-    NPC_OLD_WORLD_TRIGGER       = 15384
+    NPC_OLD_WORLD_TRIGGER       = 15384,
+    NPC_FROGGER                 = 16027
 };
 
 enum GameObjectsIds
@@ -118,6 +121,7 @@ enum GameObjectsIds
     GO_KELTHUZAD_PORTAL03       = 181404,
     GO_KELTHUZAD_PORTAL04       = 181405,
     GO_KELTHUZAD_TRIGGER        = 181444,
+    GO_KELTHUZAD_THRONE         = 181640,
     GO_ROOM_ANUBREKHAN          = 181126,
     GO_PASSAGE_ANUBREKHAN       = 181195,
     GO_PASSAGE_FAERLINA         = 194022,
@@ -135,14 +139,20 @@ enum GameObjectsIds
     GO_ROOM_HORSEMEN            = 181119,
     GO_PASSAGE_SAPPHIRON        = 181225,
     GO_ROOM_KELTHUZAD           = 181228,
+
+    // End of wing portals
     GO_ARAC_PORTAL              = 181575,
     GO_PLAG_PORTAL              = 181577,
     GO_MILI_PORTAL              = 181578,
     GO_CONS_PORTAL              = 181576,
+
+    // "Glow" effect on center-side portal
     GO_ARAC_EYE_RAMP            = 181212,
     GO_PLAG_EYE_RAMP            = 181211,
     GO_MILI_EYE_RAMP            = 181210,
     GO_CONS_EYE_RAMP            = 181213,
+
+    // "Glow" effect on boss-side portal
     GO_ARAC_EYE_RAMP_BOSS       = 181233,
     GO_PLAG_EYE_RAMP_BOSS       = 181231,
     GO_MILI_EYE_RAMP_BOSS       = 181230,
@@ -158,12 +168,6 @@ enum GameObjectsIds
     GO_NAXX_PORTAL_MILITARY     = 181578
 };
 
-enum SpellIds
-{
-    SPELL_ERUPTION              = 29371,
-    SPELL_SLIME                 = 28801
-};
-
 enum InstanceEvents
 {
     // Dialogue that happens after Gothik's death.
@@ -176,12 +180,11 @@ enum InstanceEvents
     EVENT_DIALOGUE_GOTHIK_KORTHAZZ2,
     EVENT_DIALOGUE_GOTHIK_RIVENDARE2,
 
-    // Thaddius AI requesting timed encounter (re-)spawn
-    EVENT_THADDIUS_BEGIN_RESET,
-    EVENT_THADDIUS_RESET,
-
     // Dialogue that happens after each wing.
     EVENT_KELTHUZAD_WING_TAUNT,
+
+    // Periodic Frogger summon
+    EVENT_SUMMON_FROGGER_WAVE,
 
     // Dialogue that happens after Sapphiron's death.
     EVENT_DIALOGUE_SAPPHIRON_KELTHUZAD,

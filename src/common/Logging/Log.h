@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 #define LOGGER_ROOT "root"
 
-class Log
+class TC_COMMON_API Log
 {
     typedef std::unordered_map<std::string, Logger> LoggerMap;
 
@@ -126,7 +126,7 @@ inline Logger const* Log::GetLoggerByType(std::string const& type) const
         return NULL;
 
     std::string parentLogger = LOGGER_ROOT;
-    size_t found = type.find_last_of(".");
+    size_t found = type.find_last_of('.');
     if (found != std::string::npos)
         parentLogger = type.substr(0,found);
 

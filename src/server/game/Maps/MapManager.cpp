@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -35,13 +35,12 @@
 #include "Player.h"
 #include "WorldSession.h"
 #include "Opcodes.h"
-#include "AchievementMgr.h"
 
 MapManager::MapManager()
+    : _nextInstanceId(0), _scheduledScripts(0)
 {
     i_gridCleanUpDelay = sWorld->getIntConfig(CONFIG_INTERVAL_GRIDCLEAN);
     i_timer.SetInterval(sWorld->getIntConfig(CONFIG_INTERVAL_MAPUPDATE));
-    _nextInstanceId = 0;
 }
 
 MapManager::~MapManager() { }
@@ -370,5 +369,4 @@ void MapManager::FreeInstanceId(uint32 instanceId)
         SetNextInstanceId(instanceId);
 
     _instanceIds[instanceId] = false;
-    sAchievementMgr->OnInstanceDestroyed(instanceId);
 }

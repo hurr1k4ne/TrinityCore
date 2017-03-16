@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -177,9 +177,9 @@ bool DatabaseLoader::Process(std::queue<Predicate>& queue)
     return true;
 }
 
-template
-DatabaseLoader& DatabaseLoader::AddDatabase<LoginDatabaseConnection>(DatabaseWorkerPool<LoginDatabaseConnection>& pool, std::string const& name);
-template
-DatabaseLoader& DatabaseLoader::AddDatabase<WorldDatabaseConnection>(DatabaseWorkerPool<WorldDatabaseConnection>& pool, std::string const& name);
-template
-DatabaseLoader& DatabaseLoader::AddDatabase<CharacterDatabaseConnection>(DatabaseWorkerPool<CharacterDatabaseConnection>& pool, std::string const& name);
+template TC_DATABASE_API
+DatabaseLoader& DatabaseLoader::AddDatabase<LoginDatabaseConnection>(LoginDatabaseWorkerPool&, std::string const&);
+template TC_DATABASE_API
+DatabaseLoader& DatabaseLoader::AddDatabase<CharacterDatabaseConnection>(CharacterDatabaseWorkerPool&, std::string const&);
+template TC_DATABASE_API
+DatabaseLoader& DatabaseLoader::AddDatabase<WorldDatabaseConnection>(WorldDatabaseWorkerPool&, std::string const&);

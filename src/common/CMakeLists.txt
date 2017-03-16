@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -30,9 +30,11 @@ endif (USE_COREPCH)
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
+add_definitions(-DTRINITY_API_EXPORT_COMMON)
+
 add_library(common
-  ${PRIVATE_SOURCES}
   ${PRIVATE_PCH_SOURCE}
+  ${PRIVATE_SOURCES}
 )
 
 # Do NOT add any extra include directory here, as we don't want the common
@@ -61,7 +63,7 @@ target_include_directories(common
 target_link_libraries(common
   PUBLIC
     boost
-    cppformat
+    fmt
     g3dlib
     Detour
     sfmt
@@ -69,7 +71,9 @@ target_link_libraries(common
     openssl
     valgrind
     threads
-    jemalloc)
+    jemalloc
+  PRIVATE
+    process)
 
 add_dependencies(common revision_data.h)
 
@@ -77,6 +81,18 @@ set_target_properties(common
     PROPERTIES
       FOLDER
         "server")
+
+if( BUILD_SHARED_LIBS )
+  if( UNIX )
+    install(TARGETS common
+      LIBRARY
+        DESTINATION lib)
+  elseif( WIN32 )
+    install(TARGETS common
+      RUNTIME
+        DESTINATION "${CMAKE_INSTALL_PREFIX}")
+  endif()
+endif()
 
 # Generate precompiled header
 if (USE_COREPCH)

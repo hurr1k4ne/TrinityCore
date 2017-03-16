@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,7 @@
 #define AUCTION_HOUSE_BOT_SELLER_H
 
 #include "Define.h"
-#include "ItemPrototype.h"
+#include "ItemTemplate.h"
 #include "AuctionHouseBot.h"
 
 struct ItemToSell
@@ -115,7 +115,7 @@ private:
 
 // This class handle all Selling method
 // (holder of AHB_Seller_Config data for each auction house type)
-class AuctionBotSeller : public AuctionBotAgent
+class TC_GAME_API AuctionBotSeller : public AuctionBotAgent
 {
 public:
     typedef std::vector<uint32> ItemPool;

@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -29,8 +29,8 @@ endif()
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(worldserver
-  ${PRIVATE_SOURCES}
   ${PRIVATE_PCH_SOURCE}
+  ${PRIVATE_SOURCES}
 )
 
 if( NOT WIN32 )
@@ -48,6 +48,7 @@ set_target_properties(worldserver PROPERTIES LINK_FLAGS "${worldserver_LINK_FLAG
 target_link_libraries(worldserver
   PUBLIC
     scripts
+    game
     gsoap
     readline)
 
@@ -67,6 +68,11 @@ set_target_properties(worldserver
     PROPERTIES
       FOLDER
         "server")
+
+# Add all dynamic projects as dependency to the worldserver
+if (WORLDSERVER_DYNAMIC_SCRIPT_MODULES_DEPENDENCIES)
+  add_dependencies(worldserver ${WORLDSERVER_DYNAMIC_SCRIPT_MODULES_DEPENDENCIES})
+endif()
 
 if( WIN32 )
   if ( MSVC )
